@@ -13,7 +13,7 @@ function renderView(ox, oy, cx, cy, mode, sx, sy) {
   g.save(); g.scale(VS, VS);
   drawBackground();
   g.save(); g.translate(-viewX, -viewY);
-  drawStart(); drawTerrain(); drawGates(); drawLocksAndLifts(); drawThemeBack(); drawGuides(); drawBossArena(); drawGoal(); drawItems(); drawEnemies(); drawPlayer(); drawParticles(); drawThemeFront(); drawDarkZones(); drawDebugBoxes();
+  drawThemeBehind(); drawStart(); drawTerrain(); drawGates(); drawLocksAndLifts(); drawThemeBack(); drawGuides(); drawBossArena(); drawGoal(); drawItems(); drawEnemies(); drawPlayer(); drawParticles(); drawThemeFront(); drawDarkZones(); drawDebugBoxes();
   if (mode !== 'builder' && effects.dark > 0) {
     const a = clamp(Math.min(effects.dark, 360 - effects.dark) / 20, 0, 1);
     const px = P.x + P.w / 2, py = P.y + P.h / 2;

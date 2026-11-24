@@ -13,7 +13,7 @@
    ===================================================== */
 const THEME = {
   meadow: { name: 'そよ風', desc: 'ときどき強い風がふいて、ランナーが横に流される' },
-  forest: { name: '木のかげ', desc: '手前に立つ大きな木が視界をさえぎる。ランナーやP2のカーソルが近づくと木が透ける' },
+  forest: { name: '森の屋根', desc: '頭の上を葉っぱの屋根がおおっていて、上のほうが見えにくい。ランナーやP2のカーソルが近づくと透ける' },
   canyon: { name: '落石', desc: 'ときどき上から岩が落ちてくる。赤い点線と影が見えたら、そこからはなれよう' },
   cave: { name: 'まっくらな洞くつ', desc: '暗闇と低い天井。P2のカーソルのまわりだけが明るい' },
   ice: { name: 'こおりの床', desc: '地面がこおっていて、つるつる滑る。止まりたいところの少し手前で手をはなそう' },
@@ -24,36 +24,32 @@ const THEME = {
 };
 const themeOf = st => !st ? null : st.ice ? 'ice' : THEME[st.bg] ? st.bg : null;
 const curTheme = () => COOP ? themeOf(pageDef(storyIdx)) : null;
-let movers = [], foliage = [], envT = 0;
+let movers = [], foliage = [], canopy = [], trunks = [], envT = 0;
 
 /* ---------- ステージを作るとき（ホストもゲストも同じ乱数で作る） ---------- */
 function themeGen(rng) {
-  foliage = [];
+  foliage = []; canopy = []; trunks = [];
   for (const m of movers) { // 動く足場：穴の上を左右に行き来する（位置は時間だけで決まるので、ゲストにも同じに見える）
     m.w = 3 * T; m.y = (m.row + 1) * T; m.x0 = m.c0 * T; m.x1 = (m.c0 + m.pw) * T - m.w; m.x = m.x0; m.spd = 1.15; m.ph = Math.floor(rng() * 400);
   }
-  if (curTheme() === 'forest') { // 地面に根をはった木（手前に立って、うしろが見えにくい）。平らで、しかけのない場所にだけ立てる
+  if (curTheme() === 'forest') { // 森：上に葉っぱの屋根（手前）、地面から屋根までのびる幹（奥）
     const topRow = c => { let r = 0; while (r < ROWS - 1 && !solid(c, r)) r++; return r; };
-    const busy = x => {
-      const c = Math.floor(x / T);
-      if (c < 14 || x > goalX - 260 || (bossInfo && x > bossInfo.arenaStart - 160)) return true;
-      if (guides.some(gd => c >= gd.c0 - 4 && c <= gd.c1 + 4)) return true; // 穴・トゲ・ジャンプ台の場所
-      if (gates.some(gt => Math.abs(gt.c * T - x) < 200 || Math.abs(gt.sx - x) < 80) || locks.some(lk => Math.abs(lk.c * T - x) < 160)) return true;
-      if (lifts.some(lf => x > lf.sx - 80 && x < lf.x + lf.w + 80)) return true;
-      if (items.some(it => it.type === 'key' && Math.abs(it.x - x) < 90) || darkZones.some(z => x > z.x0 - 60 && x < z.x1 + 60)) return true;
-      return false;
-    };
-    for (let x = 640 + rng() * 200; x < WW - 300;) {
-      const c = Math.floor(x / T), r = topRow(c);
-      let ok = r < ROWS - 1 && tileAt(c, r) === 1 && !busy(x);
-      for (let d = -3; ok && d <= 3; d++) if (topRow(c + d) !== r) ok = false; // まわりも平ら
-      for (let rr = r - 14; ok && rr < r; rr++) if (rr >= 0 && solid(c, rr)) ok = false; // 上が天井でふさがっていない
-      if (!ok) { x += 40; continue; }
-      const w = 30 + rng() * 16, H = 230 + rng() * 90, crown = [];
-      for (let k = 0; k < 7; k++) crown.push([(rng() - 0.5) * w * 5.2, (rng() - 0.5) * 70, 44 + rng() * 32]);
-      const bark = []; for (let k = 0; k < 3; k++) bark.push([(rng() - 0.5) * 0.6, rng() * 1000]);
-      foliage.push({ x: c * T + T / 2, gy: r * T, w, H, crown, bark, lean: (rng() - 0.5) * 14, br: rng() < 0.5 ? -1 : 1 });
-      x += 520 + rng() * 320;
+    const gr = []; for (let c = 0; c < LW; c++) { const r = topRow(c); gr.push(r < ROWS - 1 ? r : null); }
+    // 屋根の高さ：まわりの地面（真ん中くらいの高さ）から少し上。ギザギザしすぎないよう、まわり24マスで決める
+    const SEG = 3 * T;
+    canopy = [];
+    for (let x = 0, i = 0; x < WW + SEG; x += SEG, i++) {
+      const c = Math.floor(x / T), hs = [];
+      for (let d = -12; d <= 12; d++) { const v = gr[c + d]; if (v != null) hs.push(v); }
+      hs.sort((p, q) => p - q);
+      const med = hs.length ? hs[Math.floor(hs.length / 2)] : ROWS - 6;
+      canopy.push({ y: med * T - 280 + Math.sin(i * 1.7) * 10, r: 30 + rng() * 14, dot: rng() });
+    }
+    for (let i = 1; i < canopy.length - 1; i++) canopy[i].y = (canopy[i - 1].y + canopy[i].y * 2 + canopy[i + 1].y) / 4; // なめらかに
+    trunks = [];
+    for (let x = 120 + rng() * 120; x < WW; x += 150 + rng() * 170) {
+      const c = Math.floor(x / T), r = gr[c];
+      trunks.push({ x, w: 26 + rng() * 22, gy: r != null ? r * T : WH + 40, br: rng() < 0.35 ? (rng() < 0.5 ? -1 : 1) : 0, by: 0.3 + rng() * 0.35, ph: rng() * 1000 });
     }
   }
 }
@@ -135,38 +131,25 @@ function drawThemeBack() {
 }
 function drawThemeFront() {
   const th = curTheme(); if (!th) return;
-  if (th === 'forest') {
-    for (const f of foliage) {
-      if (f.x + f.w * 4 < viewX || f.x - f.w * 4 > viewX + VWW) continue;
-      // ランナーやP2のカーソルが木に近いほど透ける（遠くの木が先の見通しをさえぎる）
-      const near = x => clamp((Math.abs(x - f.x) - f.w * 0.6) / 180, 0, 1);
-      let k = P ? near(P.x + P.w / 2) : 1;
-      if (hover.on) k = Math.min(k, near(bwx(hover.sx)));
-      const base = f.gy + 3, topY = f.gy - f.H + 40, bw = f.w * 0.62, tw = f.w * 0.36, lx = f.lean;
-      g.save(); g.globalAlpha = 0.22 + 0.7 * k;
-      g.beginPath(); g.ellipse(f.x, f.gy, f.w * 1.3, 6, 0, 0, TAU); g.fillStyle = 'rgba(36,37,43,0.18)'; g.fill(); // 根もとの影
-      // 幹：根もとが広がって、上にいくほど細い
-      g.beginPath();
-      g.moveTo(f.x - bw - 14, base); g.quadraticCurveTo(f.x - bw, base - 6, f.x - bw, base - 26);
-      g.lineTo(f.x - tw + lx, topY); g.lineTo(f.x + tw + lx, topY); g.lineTo(f.x + bw, base - 26);
-      g.quadraticCurveTo(f.x + bw, base - 6, f.x + bw + 14, base); g.closePath();
-      g.fillStyle = '#7a5236'; g.fill(); g.strokeStyle = '#4a2f1e'; g.lineWidth = 2.5; g.stroke();
-      g.strokeStyle = 'rgba(60,36,22,0.5)'; g.lineWidth = 1.8; // 木の皮のすじ
-      for (const [u, ph] of f.bark) {
-        g.beginPath();
-        for (let y = base - 8; y >= topY + 10; y -= 14) { const t = (base - y) / (base - topY), half = bw + (tw - bw) * t, xx = f.x + lx * t + u * half * 1.6 + Math.sin((y + ph) / 26) * 2; if (y === base - 8) g.moveTo(xx, y); else g.lineTo(xx, y); }
-        g.stroke();
-      }
-      // 枝（葉っぱの中へのびる）
-      const by = topY + (base - topY) * 0.28, bx = f.x + lx * 0.7 + f.br * f.w * 1.6;
-      g.beginPath(); g.moveTo(f.x + lx * 0.7, by + 10); g.quadraticCurveTo(f.x + lx * 0.7 + f.br * f.w * 0.8, by, bx, by - 34); g.lineWidth = 7; g.strokeStyle = '#6a4630'; g.stroke();
-      // 葉っぱ（幹の上にのる。重なっても濃くならないよう1回でぬる）
-      const cy = f.gy - f.H, cx = f.x + lx;
-      g.beginPath(); for (const [dx, dy, r] of f.crown) { g.moveTo(cx + dx + r, cy + dy); g.arc(cx + dx, cy + dy, r, 0, TAU); } g.fillStyle = '#357a45'; g.fill();
-      g.beginPath(); for (const [dx, dy, r] of f.crown) { g.moveTo(cx + dx - r * 0.2 + r * 0.5, cy + dy - r * 0.25); g.arc(cx + dx - r * 0.2, cy + dy - r * 0.25, r * 0.5, 0, TAU); } g.fillStyle = '#55a062'; g.fill();
-      g.strokeStyle = 'rgba(28,66,36,0.55)'; g.lineWidth = 2; for (const [dx, dy, r] of f.crown) { g.beginPath(); g.arc(cx + dx, cy + dy, r, Math.PI * 0.15, Math.PI * 0.85); g.stroke(); }
-      g.restore();
-    }
+  if (th === 'forest' && canopy.length) {
+    // 葉っぱの屋根：ランナーやP2のカーソルが屋根に近づくと透ける（上にあるものが見えにくい）
+    const SEG = 3 * T, i0 = Math.max(0, Math.floor(viewX / SEG) - 1), i1 = Math.min(canopy.length - 1, Math.ceil((viewX + VWW) / SEG) + 1);
+    const yAt = x => { const i = clamp(Math.floor(x / SEG), 0, canopy.length - 1); return canopy[i].y; };
+    const under = (x, y) => clamp((y - yAt(x) - 30) / 110, 0, 1);
+    let k = P ? under(P.x + P.w / 2, P.y) : 1;
+    if (hover.on) k = Math.min(k, under(bwx(hover.sx), bwy(hover.sy)));
+    g.save(); g.globalAlpha = 0.3 + 0.66 * k;
+    const top = viewY - 20;
+    g.beginPath(); g.moveTo(i0 * SEG, top);
+    for (let i = i0; i <= i1; i++) g.lineTo(i * SEG, canopy[i].y - canopy[i].r * 0.6);
+    g.lineTo((i1 + 1) * SEG, top); g.closePath();
+    for (let i = i0; i <= i1; i++) { const cx = i * SEG + SEG / 2, cy = canopy[i].y - canopy[i].r * 0.4, r = canopy[i].r; g.moveTo(cx + r, cy); g.arc(cx, cy, r, 0, TAU); }
+    g.fillStyle = '#3c8a4a'; g.fill(); // 重なっても濃くならないよう1回でぬる
+    g.strokeStyle = '#24582f'; g.lineWidth = 2.5;
+    for (let i = i0; i <= i1; i++) { const cx = i * SEG + SEG / 2, cy = canopy[i].y - canopy[i].r * 0.4, r = canopy[i].r; g.beginPath(); g.arc(cx, cy, r, Math.PI * 0.12, Math.PI * 0.88); g.stroke(); }
+    g.fillStyle = '#5aa865'; // 葉っぱのもよう
+    for (let i = i0; i <= i1; i++) { const c = canopy[i], cx = i * SEG + SEG / 2 + (c.dot - 0.5) * 20, cy = c.y - 70 - c.dot * 60; if (cy > top) { g.beginPath(); g.ellipse(cx, cy, 16, 7, -0.5 + c.dot, 0, TAU); g.fill(); } }
+    g.restore();
   } else if (th === 'mountain' || th === 'ice') {
     g.save(); g.fillStyle = th === 'ice' ? 'rgba(220,240,255,0.7)' : 'rgba(255,255,255,0.9)';
     const n = th === 'ice' ? 30 : 70;
@@ -198,4 +181,26 @@ function drawBolt(b) {
   g.beginPath(); let y = b.y, x = b.x; g.moveTo(x, y);
   while (y < b.gy) { y += 34; x = b.x + ((Math.floor(y / 34) % 2) ? 12 : -12); g.lineTo(x, Math.min(y, b.gy)); }
   g.stroke(); g.strokeStyle = '#ffd23f'; g.lineWidth = 3; g.stroke(); g.restore();
+}
+
+// 森の奥に立つ幹（地形より先に描くので、根もとは地面にうまる。屋根の中までのびる）
+function drawThemeBehind() {
+  if (curTheme() !== 'forest' || !canopy.length) return;
+  const SEG = 3 * T;
+  g.save();
+  g.fillStyle = 'rgba(40,90,52,0.10)'; g.fillRect(viewX - 10, viewY - 10, VWW + 20, VWH + 20); // 森の中の少し暗い空気
+  for (const t of trunks) {
+    if (t.x + t.w * 3 < viewX || t.x - t.w * 3 > viewX + VWW) continue;
+    const top = canopy[clamp(Math.floor(t.x / SEG), 0, canopy.length - 1)].y - 40, L = t.x - t.w / 2;
+    g.fillStyle = '#b08a5e'; g.fillRect(L, top, t.w, t.gy - top + 8);
+    g.strokeStyle = '#6b4b2e'; g.lineWidth = 2.5; g.beginPath(); g.moveTo(L, top); g.lineTo(L, t.gy + 8); g.moveTo(L + t.w, top); g.lineTo(L + t.w, t.gy + 8); g.stroke();
+    g.strokeStyle = 'rgba(107,75,46,0.55)'; g.lineWidth = 2; // 木の皮のすじ（えんぴつ風の短い線）
+    for (let y = top + ((t.ph | 0) % 26); y < t.gy; y += 26) { const u = ((y * 7 + t.ph) % 17) / 17; g.beginPath(); g.moveTo(L + 5 + u * (t.w - 12), y); g.lineTo(L + 5 + u * (t.w - 12), y + 11); g.stroke(); }
+    if (t.br) { // 横に出た小枝と葉っぱ
+      const by = top + (t.gy - top) * t.by, ex = t.x + t.br * (t.w / 2 + 34);
+      g.beginPath(); g.moveTo(t.x + t.br * t.w / 2, by + 8); g.lineTo(ex, by - 16); g.lineWidth = 6; g.strokeStyle = '#8c6a44'; g.stroke();
+      g.beginPath(); g.ellipse(ex + t.br * 6, by - 20, 12, 6, t.br * 0.6, 0, TAU); g.fillStyle = '#4f9c5c'; g.fill();
+    }
+  }
+  g.restore();
 }
