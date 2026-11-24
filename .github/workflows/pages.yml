@@ -22,7 +22,7 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+      url: ${{ steps.deployment.outputs.page_url || steps.deployment2.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
       - name: TURN の設定を書き込む（Secrets から）
@@ -40,5 +40,15 @@ jobs:
       - uses: actions/upload-pages-artifact@v3
         with:
           path: .
+      # アップロードした直後は GitHub 側にまだ見えていないことがあるので、少し待ってから公開する（失敗したらもう一度）
+      - name: アップロードが GitHub に登録されるのを待つ
+        run: sleep 15
       - id: deployment
+        uses: actions/deploy-pages@v4
+        continue-on-error: true
+      - name: 公開に失敗したら少し待つ
+        if: steps.deployment.outcome == 'failure'
+        run: sleep 45
+      - id: deployment2
+        if: steps.deployment.outcome == 'failure'
         uses: actions/deploy-pages@v4
