@@ -31,7 +31,12 @@ jobs:
           TURN_CREDENTIAL: ${{ secrets.TURN_CREDENTIAL }}
           TURN_URLS: ${{ vars.TURN_URLS }}
         run: node .github/scripts/write-turn-config.js
-      - uses: actions/configure-pages@v5
+      - id: pages
+        uses: actions/configure-pages@v5
+      - name: OGP の URL を絶対パスにする（SNS のカードに画像を出すため）
+        env:
+          SITE_URL: ${{ steps.pages.outputs.base_url }}
+        run: node .github/scripts/write-ogp-url.js
       - uses: actions/upload-pages-artifact@v3
         with:
           path: .
