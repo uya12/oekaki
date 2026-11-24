@@ -19,8 +19,9 @@ window.addEventListener('keydown', e => {
   if (e.code === 'F2' && DBG.on) { e.preventDefault(); DBG.panel = !DBG.panel; refreshDebugUI(); return; }
   if (GAME_KEYS.has(e.code)) e.preventDefault();
   if (e.code === 'Escape' || e.code === 'KeyP') { if (!e.repeat && NET.role !== 'guest') togglePause(); return; }
-  const m = /^(Digit|Numpad)([1-8])$/.exec(e.code);
-  if (m) { const id = DECK[+m[2] - 1]; if (id && (!NET.role || netIAmBuilder())) selectTool(id); return; }
+  const m = /^(Digit|Numpad)([0-9])$/.exec(e.code); // 1〜9キー → 1〜9枚目、0キー → 10枚目
+  if (m) { const id = DECK[m[2] === '0' ? 9 : +m[2] - 1]; if (id && (!NET.role || netIAmBuilder())) selectTool(id); return; }
+  if ((e.code === 'KeyQ' || e.code === 'KeyE') && (!NET.role || netIAmBuilder())) { cycleTool(e.code === 'KeyE' ? 1 : -1); return; } // Q・E：前・次のカード（11枚目からも選べる）
   if (e.code === 'KeyM') { if (!e.repeat) toggleBgm(); return; }
   if (e.repeat) return;
   if (NET.role && !netIAmRunner()) return; // この機械はランナーではない（ランナーの操作はもう片方のPCから届く）

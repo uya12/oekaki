@@ -3,10 +3,10 @@
    Service Worker（PWA）：一度開けば、オフラインでも遊べるようにする
    - インストール時に index.html を読み、そこに書かれている CSS・JS・アイコンを全部保存する
      （ファイルを足しても、この一覧を手で直す必要はない）
-   - 開くときは保存してあるものをすぐ使い、裏で最新版を取りに行く（次に開いたときに新しくなる）
-   - 保存のしかたを大きく変えたときだけ、CACHE の名前を変える
+   - このサイトのファイルはネットを先に使い、つながらないときだけ保存したものを使う（版が混ざらない）
+   - CACHE の名前は公開するたびに変わり、古い版の保存は消える
    ===================================================== */
-const CACHE = 'rr-v1';
+const CACHE = 'rr-dev'; // 公開するときに、版ごとの名前（rr-コミット）に書きかわる（.github/workflows/pages.yml）
 const FONT_HOSTS = ['fonts.googleapis.com', 'fonts.gstatic.com'];
 
 self.addEventListener('install', e => {
@@ -40,11 +40,15 @@ self.addEventListener('fetch', e => {
     const cache = await caches.open(CACHE);
     const key = req.mode === 'navigate' ? './index.html' : req;
     const cached = await cache.match(key, { ignoreSearch: same });
-    const fresh = fetch(req).then(res => {
+    const fresh = fetch(req, same ? { cache: 'no-cache' } : undefined).then(res => {
       if (res && (res.ok || res.type === 'opaque')) cache.put(key, res.clone());
       return res;
-    }).catch(() => cached || Response.error());
-    if (cached) { e.waitUntil(fresh); return cached; }
-    return fresh;
+    });
+    // このサイトのファイル（HTML・JS・CSS・画像）はネットを先に使う：新しい index.html と古い JS が混ざらないように。
+    // つながらないとき（オフライン）だけ、保存してあるものを使う
+    if (same) return fresh.catch(() => cached || Response.error());
+    // フォントは変わらないので、保存してあるものを先に使う
+    if (cached) { e.waitUntil(fresh.catch(() => {})); return cached; }
+    return fresh.catch(() => Response.error());
   })());
 });

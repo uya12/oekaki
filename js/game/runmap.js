@@ -101,6 +101,7 @@ function makeNodePage(nd) {
     name: elite ? `強敵！${base.name}` : base.name, kinds, elite,
     cpu: Math.round(diff.cpu * (elite ? 1.25 : 1) * 100) / 100, pool: Math.min(1, diff.pool + (elite ? 0.1 : 0)),
     time: base.time + (elite ? 15 : 0),
+    story: nd.f === 0 ? OPENING : base.story, // 1階は冒険のはじまりのお話（ほかのステージのお話は、どの階に出てもつながるように書いてある）
     erase: !!base.erase && nd.f >= 5 // 地面けし（嵐）は6階から
   });
 }
@@ -144,3 +145,12 @@ function runEvent(run) {
   evs.push(() => ({ title: '大王の落とし物', text: '消しゴム大王が、たからばこを落としていった。ごほうびを2枚えらべる！', treasure: 2 }));
   return evs[Math.floor(Math.random() * evs.length)]();
 }
+
+// 記録（ランク・メダル）を残す場所：ステージごと。強敵は別の記録（ステージ番号 + 100）。EX は EX_IDX
+function recKey() {
+  if (storyIdx === EX_IDX) return EX_IDX;
+  const nd = nodePage && nodePage.f === storyIdx ? nodePage.nd : null;
+  if (!nd || nd.type === 'boss') return storyIdx;
+  return nd.tpl + (nd.type === 'elite' ? 100 : 0);
+}
+const nodeRecKey = nd => nd.type === 'boss' ? nd.f : nd.tpl + (nd.type === 'elite' ? 100 : 0);

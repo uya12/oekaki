@@ -78,7 +78,7 @@ function setSetupTexts() {
   $('#btnDeckGo').textContent = MATCH.phase === 'redeck' ? 'このデッキで次のラウンドへ' : MATCH.setup === 0 ? '次へ：プレイヤーBのキャラ' : 'マッチ開始';
 }
 function updateRoleLabels() {
-  $('#bbHint').textContent = COOP ? 'ゲーム画面をクリックしてブロックや道具を使う。点線の場所に近づけると自動でぴったり合う。扉のスイッチはカーソルを合わせたまま長押し。ホイールか1〜8キーでカード切り替え'
+  $('#bbHint').textContent = COOP ? 'ゲーム画面をクリックしてブロックや道具を使う。点線の場所に近づけると自動でぴったり合う。扉のスイッチはカーソルを合わせたまま長押し。ホイールか1〜9・0キー（Q・Eで前・次）でカード切り替え'
     : 'ビルダー側の画面でクリック配置・ドラッグで描く。1〜8キーでカード切り替え。ホイール・右ドラッグ・ミニマップで視点移動';
   $('#btnBView').hidden = COOP;
   $('#atkHint').hidden = COOP; $('#coopNoAtk').hidden = !COOP;
@@ -122,7 +122,7 @@ function nodeInfoHtml(nd) {
   const st = makeNodePage(nd), counts = {}; st.kinds.forEach(k => { counts[k] = (counts[k] || 0) + 1; });
   const meta = Object.entries(counts).map(([k, n]) => `${KIND_JP[k]}×${n}`).join('・') + (st.cave ? '・低い天井' : '') + (st.erase ? '・地面けし' : '') + (st.boss ? '・ボス戦' : '');
   return `<div class="si-text">${nd.type === 'elite' ? `<p class="si-elite">${t.desc}</p>` : ''}${st.story.map(x => `<p>${x}</p>`).join('')}</div>
-    <p class="si-meta">関門：${meta}　制限時間：${st.time}秒　大王の強さ：${CPU_LV[COOP_LV].name}${nd.type === 'elite' ? '（強敵）' : ''}</p>${themeOf(st) ? `<p class="si-theme">ステージの特徴「${THEME[themeOf(st)].name}」：${THEME[themeOf(st)].desc}</p>` : ''}<p class="si-hint">ヒント：${st.hint}</p>`;
+    <p class="si-meta">関門：${meta}　制限時間：${st.time}秒　大王の強さ：${CPU_LV[COOP_LV].name}${nd.type === 'elite' ? '（強敵）' : ''}　ベスト：${(sv => (sv.ranks[nodeRecKey(nd)] ? 'ランク' + sv.ranks[nodeRecKey(nd)] : 'まだ記録なし'))(storySave[COOP_LV])}</p>${themeOf(st) ? `<p class="si-theme">ステージの特徴「${THEME[themeOf(st)].name}」：${THEME[themeOf(st)].desc}</p>` : ''}<p class="si-hint">ヒント：${st.hint}</p>`;
 }
 function showStory() {
   const sv = storySave[COOP_LV], run = ensureRunMap(sv.run);

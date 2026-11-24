@@ -31,7 +31,7 @@ async function netStartMirror(m) {
   } else { MATCH.on = false; DECK = (m.deck && m.deck.length ? m.deck : SUPPORT_BASIC).slice(); }
   applyCardLevels(COOP && m.up || {}); // ホストの冒険のカード（アップグレード込み）
   SFX.init(); updateRoleLabels(); netApplyRoleClasses();
-  $('#guestHint').textContent = COOP ? 'P2 サポーター：画面をクリックしてブロックを置く／ホイールか1〜8キーでカード切り替え'
+  $('#guestHint').textContent = COOP ? 'P2 サポーター：画面をクリックしてブロックを置く／ホイールか1〜9・0キー（Q・Eで前・次）でカード切り替え'
     : netIAmBuilder() ? 'ビルダー：クリック・ドラッグで置く／描く、ホイールで視点移動、1〜8キーでカード切り替え'
     : 'ランナー：A・D（←・→）で移動、W・Spaceでジャンプ、J・Fで攻撃';
   show('scr-game'); buildToolbar(); resizeGame(); resetRound();

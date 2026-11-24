@@ -37,6 +37,8 @@ jobs:
         env:
           SITE_URL: ${{ steps.pages.outputs.base_url }}
         run: node .github/scripts/write-ogp-url.js
+      - name: オフライン用の保存（Service Worker）の名前を、この版のものにする
+        run: sed -i "s/const CACHE = 'rr-dev';/const CACHE = 'rr-${GITHUB_SHA::8}';/" sw.js && grep -n "const CACHE" sw.js
       - uses: actions/upload-pages-artifact@v3
         with:
           path: .

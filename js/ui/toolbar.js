@@ -11,7 +11,7 @@ function buildToolbar() {
     const c = CARD[id];
     const b = document.createElement('button');
     b.className = 'tool'; b.dataset.id = id; b.tabIndex = -1;
-    b.innerHTML = `<span class="tk">${i + 1}</span><span class="tu"></span><canvas width="104" height="76"></canvas><span class="tx"><span class="tn">${c.name}</span><span class="tc">コスト ${c.costLabel}${c.lv ? ` <b class="tlv">${stars(c.lv)}</b>` : ''}</span></span>`;
+    b.innerHTML = `<span class="tk">${i < 9 ? i + 1 : i === 9 ? 0 : ''}</span><span class="tu"></span><canvas width="104" height="76"></canvas><span class="tx"><span class="tn">${c.name}</span><span class="tc">コスト ${c.costLabel}${c.lv ? ` <b class="tlv">${stars(c.lv)}</b>` : ''}</span></span>`;
     b.title = c.desc;
     let lastPd = 0;
     b.addEventListener('pointerdown', e => { e.preventDefault(); if (NET.role && !netIAmBuilder()) return; lastPd = performance.now(); selectTool(id); });
@@ -64,4 +64,11 @@ function updateToolAvailability() {
     b.classList.toggle('poor', energy < CARD[id].cost || (cardCd[id] || 0) > 0 || left <= 0 || (CARD[id].cat === 'pen' && penCapOn() && penLive + (isBlockCard(id) ? 4 : 1) > VS_PEN_MAX));
     const tu = b.querySelector('.tu'); if (tu) tu.textContent = left === Infinity ? '' : `のこり${left}`;
   });
+}
+
+// 前・次のカードへ（Q・Eキー）。協力モードでは、押すだけで使う回復カードは飛ばす（うっかり使わないように）
+function cycleTool(dir) {
+  const order = COOP ? DECK.filter(d => !INSTANT_SUPPORT.has(d)) : DECK; if (!order.length) return;
+  const i = order.indexOf(tool), n = order[((i < 0 ? 0 : i + dir) % order.length + order.length) % order.length];
+  selectTool(n);
 }
