@@ -75,7 +75,9 @@ function drawDarkZones() {
   if (!darkZones.length) return;
   const zs = darkZones.filter(z => z.x1 > viewX - 200 && z.x0 < viewX + VWW + 200);
   if (!zs.length) return;
-  if (!darkCv || darkCv.width !== VWW || darkCv.height !== VWH) { darkCv = document.createElement('canvas'); darkCv.width = VWW; darkCv.height = VWH; }
+  // 暗闇は半分の解像度で描いて広げる（ふちがぼやけているので見た目は変わらず、軽い）
+  const DW = Math.ceil(VWW / 2), DH = Math.ceil(VWH / 2);
+  if (!darkCv || darkCv.width !== DW || darkCv.height !== DH) { darkCv = document.createElement('canvas'); darkCv.width = DW; darkCv.height = DH; darkCv.getContext('2d').scale(0.5, 0.5); }
   const c = darkCv.getContext('2d');
   c.globalCompositeOperation = 'source-over'; c.clearRect(0, 0, VWW, VWH);
   c.fillStyle = 'rgba(10,11,18,0.97)'; c.fillRect(0, 0, VWW, VWH);
@@ -86,7 +88,7 @@ function drawDarkZones() {
   c.globalCompositeOperation = 'source-over';
   g.save(); g.beginPath();
   for (const z of zs) g.rect(z.x0, viewY - 10, z.x1 - z.x0, VWH + 20);
-  g.clip(); g.drawImage(darkCv, viewX, viewY); g.restore();
+  g.clip(); g.drawImage(darkCv, viewX, viewY, VWW, VWH); g.restore();
   for (const z of zs) {
     const lx = clamp(z.x0 + 170, viewX + 180, z.x1 - 170);
     g.save(); g.font = `15px ${FONT}`; g.textAlign = 'center'; g.textBaseline = 'alphabetic'; g.lineWidth = 3.5; g.strokeStyle = '#fff';

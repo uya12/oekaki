@@ -3,7 +3,7 @@
 /* =====================================================
    ステージの特徴（背景ごとのしかけ）。協力ストーリーだけ
    - 草原：そよ風（ときどき強い風でランナーが流される）
-   - 森：手前の木の葉が視界をさえぎる
+   - 森：上をおおう葉っぱの天井で、上のほうが見えにくい（天井・柱・景色は envset.js・scenery.js）
    - 谷：落石
    - 洞くつ：暗闇と低い天井（level.js）。こおりの洞くつは床がつるつる
    - 空：穴が多く、穴の上を動く足場が行き来する
@@ -24,11 +24,11 @@ const THEME = {
 };
 const themeOf = st => !st ? null : st.ice ? 'ice' : THEME[st.bg] ? st.bg : null;
 const curTheme = () => COOP ? themeOf(pageDef(storyIdx)) : null;
-let movers = [], foliage = [], canopy = [], trunks = [], crowns = [], lobes = [], envT = 0;
+let movers = [], canopy = [], trunks = [], lobes = [], envT = 0;
 
 /* ---------- ステージを作るとき（ホストもゲストも同じ乱数で作る） ---------- */
 function themeGen(rng) {
-  foliage = []; canopy = []; trunks = []; crowns = []; lobes = [];
+  canopy = []; trunks = []; lobes = [];
   for (const m of movers) { // 動く足場：穴の上を左右に行き来する（位置は時間だけで決まるので、ゲストにも同じに見える）
     m.w = 3 * T; m.y = (m.row + 1) * T; m.x0 = m.c0 * T; m.x1 = (m.c0 + m.pw) * T - m.w; m.x = m.x0; m.spd = 1.15; m.ph = Math.floor(rng() * 400);
   }

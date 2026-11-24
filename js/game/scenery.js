@@ -7,6 +7,11 @@
    ホストもゲストも、同じ乱数から同じ景色を作る
    ===================================================== */
 let deco = [], rockTop = [];
+// 一度だけ描いて使い回す絵（毎フレーム描くと重いもの）
+const SPR = {};
+function sprite(key, w, h, draw) { if (!SPR[key]) { const c = document.createElement('canvas'); c.width = w; c.height = h; draw(c.getContext('2d'), w, h); SPR[key] = c; } return SPR[key]; }
+const glowSprite = (key, rgb, a) => sprite(key, 128, 128, (x, w) => { const gd = x.createRadialGradient(64, 64, 2, 64, 64, 64); gd.addColorStop(0, `rgba(${rgb},${a})`); gd.addColorStop(1, `rgba(${rgb},0)`); x.fillStyle = gd; x.fillRect(0, 0, w, w); });
+
 const SCN_SEG = 3 * T;
 const hash01 = n => { n = Math.imul(n ^ (n >>> 15), 0x2c1b3c6d); n = Math.imul(n ^ (n >>> 12), 0x297a2d39); n ^= n >>> 15; return (n >>> 0) / 4294967296; };
 const groundTop = c => { let r = 0; while (r < ROWS - 1 && !solid(c, r)) r++; return r; };
@@ -84,16 +89,15 @@ function drawSceneryBehind() {
 }
 // 城の壁（石のレンガ）。地面より上の背景に、うすく
 function drawCastleWall() {
-  g.save();
-  g.fillStyle = 'rgba(205,196,214,0.55)'; g.fillRect(viewX - 10, viewY - 10, VWW + 20, VWH + 20);
-  g.strokeStyle = 'rgba(110,90,130,0.22)'; g.lineWidth = 1.5; g.beginPath();
-  const bh = 26, bw = 52, y0 = Math.floor(viewY / bh) * bh, x0 = Math.floor(viewX / bw) * bw - bw;
-  for (let y = y0; y < viewY + VWH + bh; y += bh) {
-    g.moveTo(viewX - 10, y); g.lineTo(viewX + VWW + 10, y);
-    const off = (Math.round(y / bh) % 2) * bw / 2;
-    for (let x = x0 + off; x < viewX + VWW + bw; x += bw) { g.moveTo(x, y); g.lineTo(x, y + bh); }
-  }
-  g.stroke(); g.restore();
+  // 壁（色とレンガ）は前もって1枚の絵にしておき、レンガの1つぶん（52px）ずつずらして貼る
+  const W = Math.ceil(VWW) + 60, H = Math.ceil(VWH) + 60, key = `wall${W}x${H}`;
+  const img = sprite(key, W, H, (x, w, h) => {
+    x.fillStyle = 'rgba(205,196,214,0.55)'; x.fillRect(0, 0, w, h);
+    x.strokeStyle = 'rgba(110,90,130,0.22)'; x.lineWidth = 1.5; x.beginPath();
+    for (let y = 0; y <= h; y += 26) { x.moveTo(0, y); x.lineTo(w, y); const o = (Math.round(y / 26) % 2) * 26; for (let xx = o; xx <= w; xx += 52) { x.moveTo(xx, y); x.lineTo(xx, y + 26); } }
+    x.stroke();
+  });
+  g.drawImage(img, Math.floor(viewX / 52) * 52 - 2, Math.floor(viewY / 52) * 52 - 2);
 }
 // 洞くつの天井のつらら（天井のマスの下に、決まった形でぶら下がる）
 function drawCaveCeiling(ice) {
@@ -149,8 +153,7 @@ const DECO_DRAW = {
   },
   crystal(d) { // 光る水晶
     const glow = 0.5 + 0.3 * Math.sin(tick / 40 + d.v * 9), s = d.s;
-    g.save(); const gd = g.createRadialGradient(d.x, d.y - 14 * s, 2, d.x, d.y - 14 * s, 40 * s); gd.addColorStop(0, `rgba(170,140,255,${0.45 * glow})`); gd.addColorStop(1, 'rgba(170,140,255,0)');
-    g.fillStyle = gd; g.fillRect(d.x - 40 * s, d.y - 54 * s, 80 * s, 80 * s);
+    g.save(); g.globalAlpha = glow; g.drawImage(glowSprite('crystal', '170,140,255', 0.45), d.x - 40 * s, d.y - 54 * s, 80 * s, 80 * s); g.globalAlpha = 1;
     g.fillStyle = '#b9a2ff'; g.strokeStyle = '#5b3a9a'; g.lineWidth = 1.5;
     for (const [dx, h, a] of [[-7, 18, -0.3], [0, 28, 0], [8, 20, 0.35]]) { g.save(); g.translate(d.x + dx * s, d.y); g.rotate(a); g.beginPath(); g.moveTo(-4 * s, 0); g.lineTo(-4 * s, -h * s + 6); g.lineTo(0, -h * s); g.lineTo(4 * s, -h * s + 6); g.lineTo(4 * s, 0); g.closePath(); g.fill(); g.stroke(); g.restore(); }
     g.restore();
@@ -198,8 +201,7 @@ const DECO_DRAW = {
   },
   torch(d) { // たいまつ（ゆらゆら光る）
     const f = 0.85 + 0.15 * Math.sin(tick / 5 + d.v * 9) + 0.08 * Math.sin(tick / 2.3);
-    g.save(); const gd = g.createRadialGradient(d.x, d.y - 16, 2, d.x, d.y - 16, 70 * f); gd.addColorStop(0, 'rgba(255,190,90,0.45)'); gd.addColorStop(1, 'rgba(255,190,90,0)');
-    g.fillStyle = gd; g.fillRect(d.x - 80, d.y - 90, 160, 160);
+    g.save(); g.drawImage(glowSprite('torch', '255,190,90', 0.45), d.x - 70 * f, d.y - 16 - 70 * f, 140 * f, 140 * f);
     g.fillStyle = '#6b5a4e'; g.fillRect(d.x - 3, d.y - 8, 6, 22); g.fillRect(d.x - 8, d.y - 10, 16, 5);
     g.beginPath(); g.moveTo(d.x - 7, d.y - 10); g.quadraticCurveTo(d.x - 6 * f, d.y - 26 * f, d.x, d.y - 32 * f); g.quadraticCurveTo(d.x + 7 * f, d.y - 22 * f, d.x + 7, d.y - 10); g.closePath();
     g.fillStyle = '#ffb347'; g.fill(); g.beginPath(); g.arc(d.x, d.y - 15, 3.5, 0, TAU); g.fillStyle = '#fff2b0'; g.fill();

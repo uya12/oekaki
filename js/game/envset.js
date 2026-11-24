@@ -73,9 +73,8 @@ function drawCeiling(th) {
     g.fillStyle = 'rgba(30,110,50,0.22)';
     for (const l of vis) for (let j = 0; j < 2; j++) { const h = hash01(l.seed + j * 13), h2 = hash01(l.seed * 3 + j); g.beginPath(); g.ellipse(l.x0 + h * l.w, l.y - 60 - h2 * 140, 26 + h2 * 20, 12 + h * 8, (h - 0.5) * 1.2, 0, TAU); g.fill(); }
   } else if (th === 'castle') { // 石のブロック
-    g.strokeStyle = 'rgba(60,48,84,0.35)'; g.lineWidth = 1.6; g.beginPath();
-    const bh = 24, bw = 48; for (let y = Math.floor(top / bh) * bh; y < last.y + 40; y += bh) { g.moveTo(viewX - 40, y); g.lineTo(viewX + VWW + 40, y); const o = (Math.round(y / bh) % 2) * bw / 2; for (let x = Math.floor(viewX / bw) * bw - bw + o; x < viewX + VWW + bw; x += bw) { g.moveTo(x, y); g.lineTo(x, y + bh); } }
-    g.stroke();
+    const W = Math.ceil(VWW) + 60, H = Math.ceil(VWH) + 60; // 石のブロック：前もって描いた1枚の絵を貼る
+    g.drawImage(sprite(`ceil${W}x${H}`, W, H, (x, w, h) => { x.strokeStyle = 'rgba(60,48,84,0.35)'; x.lineWidth = 1.6; x.beginPath(); for (let y = 0; y <= h; y += 24) { x.moveTo(0, y); x.lineTo(w, y); const o = (Math.round(y / 24) % 2) * 24; for (let xx = o; xx <= w; xx += 48) { x.moveTo(xx, y); x.lineTo(xx, y + 24); } } x.stroke(); }), Math.floor(viewX / 48) * 48 - 2, Math.floor(viewY / 48) * 48 - 2);
   } else if (spikes) { // 岩（氷）のすじ
     g.strokeStyle = th === 'ice' ? 'rgba(255,255,255,0.5)' : 'rgba(120,110,140,0.35)'; g.lineWidth = 3;
     for (const l of vis) { const h = hash01(l.seed + 3); g.beginPath(); g.moveTo(l.x0 + l.w * 0.2, l.y - 40 - h * 60); g.lineTo(l.x0 + l.w * 0.5, l.y - 20 - h * 40); g.lineTo(l.x0 + l.w * 0.75, l.y - 50 - h * 50); g.stroke(); }
