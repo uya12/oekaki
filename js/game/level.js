@@ -142,7 +142,7 @@ function holeMaker(rng) {
 function genLevel(seed) {
   const rng = mulberry32(seed);
   const ri = (a, b) => a + Math.floor(rng() * (b - a + 1));
-  LW = VS_LW; ROWS = 27; gates = []; holdGate = null; guides = []; bossInfo = null; bossCut = null; locks = []; lifts = []; darkZones = []; holdLift = null; movers = []; foliage = []; canopy = []; trunks = [];
+  LW = VS_LW; ROWS = 27; gates = []; holdGate = null; guides = []; bossInfo = null; bossCut = null; locks = []; lifts = []; darkZones = []; holdLift = null; movers = []; foliage = []; canopy = []; trunks = []; deco = []; rockTop = [];
   if (COOP) { genCoopLevel(rng, ri, seed); themeGen(rng); return; } // themeGen：ステージの特徴（動く足場・森の木）
   const N = LW * ROWS;
   tiles = new Uint8Array(N); paintCol = new Uint8Array(N); paintKind = new Uint8Array(N); paintHp = new Uint8Array(N);

@@ -52,6 +52,7 @@ function themeGen(rng) {
       trunks.push({ x, w: 26 + rng() * 22, gy: r != null ? r * T : WH + 40, br: rng() < 0.35 ? (rng() < 0.5 ? -1 : 1) : 0, by: 0.3 + rng() * 0.35, ph: rng() * 1000 });
     }
   }
+  genScenery(rng); // 景色（花・岩・城の壁など）
 }
 // ステージが始まるとき（ホストだけ。敵はゲストに送られる）
 function themeStart() {
@@ -167,6 +168,7 @@ function drawThemeFront() {
     }
     g.restore();
   }
+  drawSceneryFront(); // 景色（手前）
 }
 // かみなりの弾の絵（world.js の drawBullets から）
 function drawBolt(b) {
@@ -185,6 +187,7 @@ function drawBolt(b) {
 
 // 森の奥に立つ幹（地形より先に描くので、根もとは地面にうまる。屋根の中までのびる）
 function drawThemeBehind() {
+  drawSceneryBehind(); // 景色（奥）
   if (curTheme() !== 'forest' || !canopy.length) return;
   const SEG = 3 * T;
   g.save();
