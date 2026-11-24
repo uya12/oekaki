@@ -262,7 +262,7 @@ function drawRockTop() {
   g.beginPath(); g.moveTo(i0 * SCN_SEG, top);
   for (let i = i0; i <= i1; i++) { const c = rockTop[i]; g.lineTo(i * SCN_SEG, c.y - 10); g.lineTo(i * SCN_SEG + SCN_SEG * (0.3 + c.dot * 0.4), c.y + 8 + c.dot * 22); }
   g.lineTo((i1 + 1) * SCN_SEG, top); g.closePath();
-  g.fillStyle = '#b9805a'; g.fill(); g.strokeStyle = '#7a4c30'; g.lineWidth = 2.5; g.stroke();
+  g.fillStyle = '#c08458'; g.fill(); g.strokeStyle = '#6a3f24'; g.lineWidth = 3.5; g.lineJoin = 'round'; g.stroke();
   g.save(); g.clip(); g.strokeStyle = 'rgba(120,70,40,0.4)'; g.lineWidth = 6; // しま模様
   for (let y = Math.floor(viewY / 40) * 40; y < yAt(viewX + VWW / 2) + 40; y += 40) { g.beginPath(); g.moveTo(viewX - 20, y + 10); g.quadraticCurveTo(viewX + VWW / 2, y - 6, viewX + VWW + 20, y + 12); g.stroke(); }
   g.restore();
@@ -283,9 +283,6 @@ function drawCloudSea() {
 // 嵐：上をおおう黒い雲・ななめの雨・かみなりの光
 function drawStormFront() {
   g.save();
-  g.fillStyle = 'rgba(70,74,96,0.85)'; g.beginPath(); g.moveTo(viewX - 20, viewY - 20); // 雲の天井（画面の上にくっつく）
-  for (let x = Math.floor(viewX / 50) * 50 - 50; x <= viewX + VWW + 60; x += 50) { const h = hash01(Math.floor(x / 50) * 13 + 5); g.lineTo(x, viewY + 26 + h * 26); }
-  g.lineTo(viewX + VWW + 60, viewY - 20); g.closePath(); g.fill();
   g.strokeStyle = 'rgba(180,195,230,0.55)'; g.lineWidth = 1.6; g.beginPath(); // ななめの雨
   for (let i = 0; i < 110; i++) {
     const x = viewX + ((i * 97 + tick * 5) % (VWW + 160)) - 80, y = viewY + ((i * 53 + tick * 15) % (VWH + 40)) - 20;
