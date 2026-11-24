@@ -47,9 +47,12 @@ function themeGen(rng) {
     }
     for (let i = 1; i < canopy.length - 1; i++) canopy[i].y = (canopy[i - 1].y + canopy[i].y * 2 + canopy[i + 1].y) / 4; // なめらかに
     trunks = [];
-    for (let x = 120 + rng() * 120; x < WW; x += 150 + rng() * 170) {
-      const c = Math.floor(x / T), r = gr[c];
-      trunks.push({ x, w: 26 + rng() * 22, gy: r != null ? r * T : WH + 40, br: rng() < 0.35 ? (rng() < 0.5 ? -1 : 1) : 0, by: 0.3 + rng() * 0.35, ph: rng() * 1000 });
+    // 間隔はばらばらに：2〜3本かたまって生えている所・ふつうの所・何もない広い所
+    for (let x = 160 + rng() * 260; x < WW;) {
+      const c = Math.floor(x / T), r = gr[c], young = rng() < 0.25; // ときどき細い若い木
+      trunks.push({ x, w: young ? 16 + rng() * 8 : 28 + rng() * 26, gy: r != null ? r * T : WH + 40, br: rng() < 0.35 ? (rng() < 0.5 ? -1 : 1) : 0, by: 0.3 + rng() * 0.35, ph: rng() * 1000 });
+      const q = rng();
+      x += q < 0.3 ? 55 + rng() * 60 : q < 0.7 ? 260 + rng() * 200 : 520 + rng() * 380;
     }
   }
   genScenery(rng); // 景色（花・岩・城の壁など）
