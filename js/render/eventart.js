@@ -54,7 +54,7 @@ function drawEventArt(ctx, id, W, H) {
     for (let k = 0; k < flowers; k++) { const fx = rnd() * 240, fy = y + 7 + rnd() * 16; x.fillStyle = ['#fff', '#ffc2d4', '#ffe58a'][k % 3]; for (let a = 0; a < 5; a++) { circ(fx + Math.cos(a * 1.26) * 2.3, fy + Math.sin(a * 1.26) * 2.3, 1.7); x.fill(); } x.fillStyle = '#f2a65a'; circ(fx, fy, 1.2); x.fill(); }
   };
   const mushroom = (mx, my, s = 1) => { rr(mx - 2.5 * s, my - 7 * s, 5 * s, 7 * s, 2); fs('#fff4dc', 1.4); x.beginPath(); x.ellipse(mx, my - 7 * s, 7 * s, 6 * s, 0, Math.PI, 0); x.closePath(); fs('#e8305f', 1.6); x.fillStyle = '#fff'; circ(mx - 3 * s, my - 10 * s, 1.3 * s); x.fill(); circ(mx + 2.5 * s, my - 9 * s, 1.1 * s); x.fill(); };
-  const SCENE = { inkpool: 'meadow', dropped: 'meadow', target: 'meadow', catch: 'meadow', spring: 'forest', lost: 'forest', vending: 'dusk', thief: 'night', sharpener: 'room', mirror: 'room', bookstore: 'shop', nap: 'sky', dice: 'sky', cursedbox: 'cave', eraserbite: 'cave', swamp: 'swamp', trap: 'swamp', cups: 'castle', guard: 'castle', simon: 'castle', taiko: 'festival' };
+  const SCENE = { inkpool: 'meadow', dropped: 'meadow', rope: 'meadow', catch: 'meadow', spring: 'forest', lost: 'forest', vending: 'dusk', thief: 'night', sharpener: 'room', mirror: 'room', bookstore: 'shop', nap: 'sky', dice: 'sky', cursedbox: 'cave', eraserbite: 'cave', swamp: 'swamp', trap: 'swamp', cups: 'castle', guard: 'castle', simon: 'castle', taiko: 'festival' };
   const kind = SCENE[id] || 'meadow';
   let groundFn = y => grass(y, '#93d06f', '#5fa54a');
   if (kind === 'meadow') {
@@ -249,11 +249,13 @@ function drawEventArt(ctx, id, W, H) {
       for (const [sx, sy] of [[60, 118], [70, 110], [52, 104]]) { circ(sx, sy, 2.5); x.fillStyle = '#e9e1ea'; x.fill(); }
       break;
     }
-    case 'target': { // えんぴつのまと
-      ground(); for (const [r, c] of [[44, '#fff'], [32, '#e8305f'], [20, '#fff'], [9, '#ffd23f']]) { circ(120, 74, r); fs(c, 2.4); }
-      P(120, 118, 120, 128); fs(null, 3);
-      x.save(); x.translate(174, 50 + bob); x.rotate(-0.9); P(0, -6, 60, -6, 60, 6, 0, 6); fs('#ffd84a'); P(0, -6, -14, 0, 0, 6); fs('#e9c69a'); P(60, -6, 70, -6, 70, 6, 60, 6); fs('#f2a3b3'); x.restore();
-      spark(84, 40, 6); spark(160, 108, 5); break;
+    case 'rope': { // 大なわとび
+      ground();
+      x.beginPath(); x.moveTo(40, 92); x.quadraticCurveTo(120, -30, 200, 92); x.strokeStyle = '#7a4fd0'; x.lineWidth = 3.5; x.stroke();
+      for (const ex of [28, 212]) { rr(ex - 14, 84, 28, 44, 6); fs('#fbe6ee', 2.2); x.fillStyle = '#5b8def'; x.fillRect(ex - 14, 106, 28, 9); x.fillStyle = INK; circ(ex - 5, 96, 2); x.fill(); circ(ex + 5, 96, 2); x.fill(); }
+      face(100, 74 - bob, 13, '#e8305f', 'smile'); face(140, 70 + bob, 13, '#2a5bd7', 'smile');
+      x.fillStyle = 'rgba(36,37,43,0.15)'; ell(100, 129, 11, 2.5); x.fill(); ell(140, 129, 11, 2.5); x.fill();
+      spark(120, 40, 6); break;
     }
     case 'catch': { // ハートキャッチ
       ground();

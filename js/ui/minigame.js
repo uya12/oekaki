@@ -5,7 +5,7 @@
    - P1（ランナー・赤）：PCはキーボード（A・D／←→で動く、W・スペースで決定）。オンラインではホストのタップ
    - P2（サポーター・青）：PCはマウス。オンラインではゲストのタップ
    - ホストがゲームを動かし、ゲストには 60ms ごとにようすを送る（ゲストは操作をホストへ送る）
-   - target：えんぴつのまと  catch：ハートキャッチ  cups：大王のカップあて
+   - rope：大なわとび  catch：ハートキャッチ  cups：大王のカップあて
    - taiko：インクだいこ  guard：たからをまもれ  simon：おぼえて！大王のまね
    結果は tier：2 = 大成功 / 1 = 成功 / 0 = 失敗
    ===================================================== */
@@ -26,46 +26,58 @@ function mgLegend(x, S, p1, p2) { // 下に、だれがどう操作するか
 }
 
 const MG = {
-  /* ---- えんぴつのまと：動く的に、2本のえんぴつを2人がそれぞれ止める（3回） ---- */
-  target: {
-    init: () => ({ t: 0, round: 0, zone: 240, zv: 1, p: [{ x: 60, ph: 0, stop: null }, { x: 420, ph: 0.6, stop: null }], score: 0, marks: [], msg: '', msgT: -9999, wait: 0, over: false, tier: 0 }),
+  /* ---- 大なわとび：なわが下に来たら、2人ともジャンプ。20回めざす（3回ひっかかったらおしまい） ---- */
+  rope: {
+    AIR: 320, HJ: 42, CLEAR: 12, GOAL: 20, LIVES: 3, // セーフになるのは、なわが来る前後 0.13秒くらいのジャンプだけ
+    init: () => ({ t: 0, th: Math.PI, per: 1400, jumps: 0, miss: 0, pl: [{ jt: -9999, who: '' }, { jt: -9999, who: '' }], stop: 1300, msg: 'なわが下に来たら、2人ともジャンプ！', msgT: 0, msgC: '#5d6170', endT: 0, over: false, tier: 0 }),
+    h(S, i) { const R = MG.rope, u = (S.t - S.pl[i].jt) / R.AIR; return u > 0 && u < 1 ? 4 * R.HJ * u * (1 - u) : 0; },
+    base: S => Math.max(680, 1400 - S.jumps * 40), // とぶたびに、だんだん速く
+    say(S, msg, col) { S.msg = msg; S.msgT = S.t; S.msgC = col; },
     update(S, dt, C) {
-      S.t += dt;
-      const L = 50, R = 430, spd = 0.75 + S.round * 0.2; // 1コマで動く量が、黄色のはばより小さくなる速さ（とても難しいけど、ねらえば止められる）
-      S.zone += S.zv * dt * (0.03 + S.round * 0.025); // 的も動く（だんだん速く）
-      if (S.zone < 110) { S.zone = 110; S.zv = 1; } if (S.zone > 370) { S.zone = 370; S.zv = -1; }
-      if (S.wait > 0) {
-        S.wait -= dt;
-        if (S.wait <= 0) { if (S.round >= 3) { S.over = true; S.tier = S.score >= 10 ? 2 : S.score >= 6 ? 1 : 0; } else S.p.forEach(q => { q.stop = null; }); }
+      S.t += dt; const R = MG.rope;
+      for (const i of [0, 1]) if (C[i + 1].press && S.t - S.pl[i].jt >= R.AIR) { S.pl[i].jt = S.t; SFX.jump(); } // 空中ではとべない
+      if (S.endT) { if (S.t > S.endT) S.over = true; return; }
+      if (S.stop > 0) { S.stop -= dt; return; }
+      const prev = S.th; S.th += dt / S.per * Math.PI * 2;
+      if (Math.floor(prev / (Math.PI * 2)) === Math.floor(S.th / (Math.PI * 2))) return;
+      // なわが足もとを通った：2人とも空中ならセーフ
+      const caught = [0, 1].filter(i => R.h(S, i) < R.CLEAR);
+      if (caught.length) {
+        S.miss++; SFX.hurt(); S.stop = 1100; S.th = Math.PI; S.per = R.base(S);
+        R.say(S, caught.length === 2 ? '2人ともひっかかった！' : `${caught[0] ? 'P2' : 'P1'}がひっかかった！`, '#d1293f');
+        if (S.miss >= R.LIVES) { S.endT = S.t + 1300; S.tier = S.jumps >= 12 ? 1 : 0; R.say(S, `おしまい！ ${S.jumps}回とべた`, S.tier ? '#2a9d5c' : '#d1293f'); }
         return;
       }
-      S.p.forEach((q, i) => { if (q.stop == null) { q.ph += dt / 1000 * spd * (i ? 1.27 : 1); const f = q.ph % 2; q.x = L + (R - L) * (f < 1 ? f : 2 - f); } });
-      for (const i of [0, 1]) if (C[i + 1].press && S.p[i].stop == null) { S.p[i].stop = S.p[i].x; SFX.pick(); }
-      if (S.p[0].stop != null && S.p[1].stop != null) { // 2本とも止めたら点数
-        const pts = S.p.map(q => { const d = Math.abs(q.stop - S.zone); return d <= 7 ? 2 : d <= 20 ? 1 : 0; });
-        const add = pts[0] + pts[1] + (pts[0] === 2 && pts[1] === 2 ? 1 : 0); // 2人ともぴったりならボーナス
-        S.score += add; S.round++; S.wait = 1000; S.msgT = S.t;
-        S.msg = add >= 5 ? '2人ともぴったり！' : add >= 3 ? 'おしい！' : add > 0 ? 'うーん…' : 'ざんねん';
-        S.marks.push([Math.round(S.p[0].stop - S.zone), Math.round(S.p[1].stop - S.zone)]);
-      }
+      S.jumps++; SFX.pick();
+      if (S.jumps >= R.GOAL) { S.endT = S.t + 1300; S.tier = 2; R.say(S, `${R.GOAL}回とべた！ 大成功！`, '#e0a100'); return; }
+      const b = R.base(S), fast = S.jumps >= 8 && Math.random() < 0.22; // ときどき「はやまわし」
+      S.per = fast ? b * 0.68 : S.jumps >= 5 ? b * (0.88 + Math.random() * 0.24) : b;
+      if (fast) R.say(S, 'はやまわし！', '#e07a00');
     },
     draw(S, x) {
-      mgPaper(x); const BY = 150, L = 50, R = 430;
-      mgText(x, `えんぴつのまと　${Math.min(S.round + 1, 3)}回目 / 3`, MG_W / 2, 30, 19); mgText(x, `とくてん ${S.score}`, MG_W - 60, 58, 15, '#5b3a9a');
-      mgRR(x, L, BY - 14, R - L, 28, 14); x.fillStyle = '#fff'; x.fill(); x.strokeStyle = MG_INK; x.lineWidth = 3; x.stroke();
-      x.fillStyle = '#c9f0d2'; x.fillRect(S.zone - 20, BY - 12, 40, 24); x.fillStyle = '#ffd23f'; x.fillRect(S.zone - 7, BY - 12, 14, 24);
-      S.p.forEach((q, i) => { // P1 は上から、P2 は下から
-        const px = q.stop != null ? q.stop : q.x, up = i === 0, col = up ? P1C : P2C;
-        x.save(); x.translate(px, up ? BY - 16 : BY + 16); if (!up) x.scale(1, -1);
-        x.fillStyle = up ? '#ffd84a' : '#9fd3f4'; x.strokeStyle = MG_INK; x.lineWidth = 2; x.beginPath(); x.moveTo(-7, -48); x.lineTo(7, -48); x.lineTo(7, -12); x.lineTo(0, 0); x.lineTo(-7, -12); x.closePath(); x.fill(); x.stroke();
-        x.fillStyle = col; x.fillRect(-7, -56, 14, 8); x.strokeRect(-7, -56, 14, 8); x.restore();
-        if (q.stop != null) mgText(x, '止めた', px, up ? BY - 80 : BY + 96, 12, col);
+      mgPaper(x); const R = MG.rope, GY = 240, L = 92, RR = 388, HY = 150;
+      mgText(x, `大なわとび　${S.jumps} / ${R.GOAL}回`, MG_W / 2, 28, 19);
+      for (let k = 0; k < R.LIVES; k++) mgHeart(x, MG_W / 2 - 20 + k * 20, 48, 7, k < R.LIVES - S.miss ? '#f27eb1' : '#dfe3ea');
+      x.fillStyle = '#e3e6ee'; x.fillRect(0, GY, MG_W, MG_H - GY); x.strokeStyle = MG_INK; x.lineWidth = 2.5; x.beginPath(); x.moveTo(0, GY); x.lineTo(MG_W, GY); x.stroke();
+      const ry = HY + 90 * Math.cos(S.th), front = Math.sin(S.th) < 0; // おりてくるときは手前
+      const rope = () => { x.beginPath(); x.moveTo(L, HY); x.quadraticCurveTo(MG_W / 2, 2 * ry - HY, RR, HY); x.strokeStyle = '#7a4fd0'; x.lineWidth = front ? 4.5 : 2.5; x.stroke(); };
+      if (!front) { x.globalAlpha = 0.5; rope(); x.globalAlpha = 1; }
+      for (const [ex, hx] of [[50, L], [430, RR]]) { // なわをまわす消しゴム
+        mgRR(x, ex - 22, 160, 44, 70, 8); x.fillStyle = '#fbe6ee'; x.fill(); x.strokeStyle = MG_INK; x.lineWidth = 2.5; x.stroke(); x.fillStyle = '#5b8def'; x.fillRect(ex - 22, 196, 44, 14);
+        x.fillStyle = MG_INK; x.beginPath(); x.arc(ex - 7, 178, 3, 0, Math.PI * 2); x.arc(ex + 7, 178, 3, 0, Math.PI * 2); x.fill();
+        x.beginPath(); x.moveTo(ex, 190); x.lineTo(hx, HY); x.lineWidth = 3; x.stroke();
+      }
+      [[214, P1C], [266, P2C]].forEach(([px, col], i) => { // P1・P2
+        const h = R.h(S, i), y = GY - 30 - h;
+        x.fillStyle = 'rgba(36,37,43,0.15)'; x.beginPath(); x.ellipse(px, GY + 3, 15 - h / 6, 3, 0, 0, Math.PI * 2); x.fill();
+        x.strokeStyle = MG_INK; x.lineWidth = 2.5; x.beginPath(); x.moveTo(px - 5, y + 14); x.lineTo(px - 7 + (h ? 3 : 0), y + 28 - (h ? 6 : 0)); x.moveTo(px + 5, y + 14); x.lineTo(px + 7 - (h ? 3 : 0), y + 28 - (h ? 6 : 0)); x.stroke();
+        x.beginPath(); x.arc(px, y, 15, 0, Math.PI * 2); x.fillStyle = '#fff'; x.fill(); x.lineWidth = 3; x.stroke(); x.beginPath(); x.arc(px, y, 12, 0, Math.PI * 2); x.strokeStyle = col; x.lineWidth = 3; x.stroke();
+        x.fillStyle = MG_INK; x.beginPath(); x.arc(px - 5, y - 2, 1.8, 0, Math.PI * 2); x.arc(px + 5, y - 2, 1.8, 0, Math.PI * 2); x.fill();
+        mgText(x, i ? 'P2' : 'P1', px, GY + 22, 13, col);
       });
-      x.font = "900 12px 'Zen Maru Gothic', sans-serif";
-      S.marks.forEach(([a, b], k) => { x.textAlign = 'left'; x.fillStyle = '#5d6170'; x.fillText(`${k + 1}回目：P1 ${a > 0 ? '+' : ''}${a}　P2 ${b > 0 ? '+' : ''}${b}`, 12, 54 + k * 16); });
-      if (S.t - S.msgT < 1000) mgText(x, S.msg, MG_W / 2, BY + 62, 24, S.msg.startsWith('2人') ? '#e0a100' : S.msg === 'おしい！' ? '#2a9d5c' : '#d1293f');
-      else if (!S.over) mgText(x, '2人とも、黄色の真ん中で止めよう！（的も動く）', MG_W / 2, BY + 62, 14, '#5d6170');
-      mgLegend(x, S, 'W・スペースで止める', 'クリックで止める');
+      if (front) rope();
+      if (S.msg && S.t - S.msgT < (S.msgT ? 1300 : 2600)) mgText(x, S.msg, MG_W / 2, 102, S.msg.length > 12 ? 17 : 22, S.msgC);
+      mgLegend(x, S, 'W・スペースでジャンプ', 'クリックでジャンプ');
     }
   },
   /* ---- ハートキャッチ：2つのかごで受け止める。金のハートは2人のかごをそろえないと取れない（15秒） ---- */
@@ -330,7 +342,7 @@ function startMiniView(kind, cv) {
 function miniGuestState(m) { if (miniView && miniView.kind === m.k) miniView.S = m.s; }
 
 /* ---------- デバッグ：ミニゲームのれんしゅう画面 ---------- */
-const MDBG = { kind: 'target', back: 'scr-title', ptr: 2 };
+const MDBG = { kind: 'rope', back: 'scr-title', ptr: 2 };
 const MINI_LIST = () => Object.keys(EVENTS).filter(id => EVENTS[id].mini && MG[EVENTS[id].mini]);
 function mdbgPlay(id) {
   MDBG.kind = id; MDBG.n = (MDBG.n || 0) + 1; const E = EVENTS[id], n = MDBG.n;

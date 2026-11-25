@@ -208,6 +208,7 @@ function showReward() {
   const run = curRun(), guest = NET.role === 'guest'; if (!run) { if (!guest) showStory(); return; }
   if (!guest) { NET.rwHov = null; NET.rwPick = null; NET.rwSug = null; }
   const kind = run.rwKind || 'stage', evt = run.evt, left = (run.extra || 0) + 1;
+  if (evt && evt.id === 'target') { evt.id = 'rope'; evt.title = EVENTS.rope.title; if (evt.playing) evt.playing = 'rope'; } // 前の版の「えんぴつのまと」は大なわとびに
   if (!guest && kind !== 'event' && (!run.choices || !run.choices.length)) { run.choices = kind === 'rest' ? rollUpgrades(run) : rollRewards(run); saveStory(); }
   run.choices = kind === 'event' ? [] : run.choices || [];
   const online = rewardOnline();
