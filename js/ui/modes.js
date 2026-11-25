@@ -201,6 +201,9 @@ function runContinue() { const run = curRun(); if (run && run.pending) showRewar
 // ごほうび：3枚の中から1枚えらぶと、次のステージへ
 // オンライン：ホストがえらんでいる様子を、ゲスト（サポーター）の画面にも同じように見せる
 const rewardOnline = () => (NET.role === 'host' && NET.open && !NET.vsMode) || NET.role === 'guest';
+// ふしぎのマスのイラスト
+const evArt = evt => evt.id && EVENTS[evt.id] ? `<canvas class="ev-art" data-id="${evt.id}" width="480" height="300"></canvas>` : `<span class="rw-mark">${evt.mark || '？'}</span>`;
+function drawEvArt(root) { root.querySelectorAll('canvas.ev-art').forEach(c => drawEventArt(c.getContext('2d'), c.dataset.id, c.width, c.height)); }
 function showReward() {
   const run = curRun(), guest = NET.role === 'guest'; if (!run) { if (!guest) showStory(); return; }
   if (!guest) { NET.rwHov = null; NET.rwPick = null; NET.rwSug = null; }
@@ -213,7 +216,7 @@ function showReward() {
   $('#rewardSub').textContent = (evt && kind !== 'event' ? evt.text + '　' : '') + (kind === 'event' ? '' : 'えらんだら、マップで次の道をえらぼう。') + (kind === 'event' ? '' : guest ? '　カードをタップすると、ホストに「これがいい！」と提案できます（決めるのはホスト）' : online ? '　サポーターの提案には「P2のおすすめ」がつきます。えらんでいるカードは相手の画面にも見えます' : '');
   const row = $('#rewardRow'); row.innerHTML = ''; row.classList.toggle('watch', guest);
   if (kind === 'event' && evt && evt.opts && !evt.done) { // ふしぎのマス：どうするかえらぶ
-    row.innerHTML = `<div class="rw-event"><span class="rw-mark">${evt.mark || '？'}</span><p>${evt.text}</p><div class="ev-opts">${evt.opts.map((o, i) => `<button class="ev-opt${i === evt.opts.length - 1 ? ' safe' : ''}" data-i="${i}"${guest ? ' disabled' : ''}><b>${o.label}</b><small>${o.desc}</small></button>`).join('')}</div>${guest ? '<p class="ev-wait">ホストがえらんでいます…</p>' : ''}</div>`;
+    row.innerHTML = `<div class="rw-event">${evArt(evt)}<p>${evt.text}</p><div class="ev-opts">${evt.opts.map((o, i) => `<button class="ev-opt${i === evt.opts.length - 1 ? ' safe' : ''}" data-i="${i}"${guest ? ' disabled' : ''}><b>${o.label}</b><small>${o.desc}</small></button>`).join('')}</div>${guest ? '<p class="ev-wait">ホストがえらんでいます…</p>' : ''}</div>`;
     if (!guest) row.querySelectorAll('.ev-opt').forEach(bt => bt.addEventListener('click', () => {
       const res = resolveEvent(run, +bt.dataset.i); if (!res) return;
       SFX.pick();
@@ -221,11 +224,12 @@ function showReward() {
       saveStory(); showReward();
     }));
   } else if (!run.choices.length) { // ふしぎのマスの結果・もう選べるものがないとき
-    row.innerHTML = (kind === 'event' && evt ? `<div class="rw-event">${evt.card ? '<canvas width="208" height="128"></canvas>' : `<span class="rw-mark">${evt.mark || '？'}</span>`}${evt.picked ? `<p class="ev-picked">えらんだ：${evt.picked}</p>` : ''}<p>${evt.text}</p></div>` : '<p class="rw-none">ごほうびは全部そろいました！</p>')
+    row.innerHTML = (kind === 'event' && evt ? `<div class="rw-event">${evArt(evt)}${evt.picked ? `<p class="ev-picked">えらんだ：${evt.picked}</p>` : ''}<p>${evt.text}</p></div>` : '<p class="rw-none">ごほうびは全部そろいました！</p>')
       + (guest ? '' : '<button class="btn blue big" id="rwSkip">マップへ</button>');
-    if (kind === 'event' && evt && evt.card) iconCanvas(row.querySelector('canvas'), evt.card, 104, 64);
+
     if (!guest) $('#rwSkip').addEventListener('click', () => { run.pending = false; run.choices = null; run.evt = null; run.extra = 0; saveStory(); mapSel = null; showStory(); });
   }
+  drawEvArt(row);
   run.choices.forEach((r, ci) => {
     const b = document.createElement('button');
     const isCard = r.type === 'card', isUp = r.type === 'up', isRup = r.type === 'rup', isHeal = r.type === 'heal', bo = (r.type === 'boost' || isRup) && BOOSTS[r.id];
