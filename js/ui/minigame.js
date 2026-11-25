@@ -185,13 +185,14 @@ const MG = {
     draw(S, x) {
       mgPaper(x); const L = MG.taiko.LINE, T = MG.taiko.TRAVEL;
       mgText(x, 'インクだいこ', MG_W / 2, 26, 18); mgText(x, `${Math.round(S.hit / S.need * 100)}%（90%で大成功・からうちは−1）`, MG_W / 2, 50, 13, '#5b3a9a');
-      for (const [lx, col, soft] of [[170, P1C, '#ffd8e2'], [310, P2C, '#cfe0ff']]) { x.fillStyle = soft; x.fillRect(lx - 34, 40, 68, MG_H - 70); x.beginPath(); x.arc(lx, L, 24, 0, Math.PI * 2); x.strokeStyle = col; x.lineWidth = 4; x.stroke(); }
+      for (const [lx, col, soft] of [[170, P1C, '#ffd8e2'], [310, P2C, '#cfe0ff']]) { x.fillStyle = soft; x.fillRect(lx - 34, 62, 68, MG_H - 92); x.beginPath(); x.arc(lx, L, 24, 0, Math.PI * 2); x.strokeStyle = col; x.lineWidth = 4; x.stroke(); }
       for (const n of S.notes) {
-        const y = L - (n.t - S.t) / T * 190; if (y < 20 || y > MG_H) continue;
+        const y = L - (n.t - S.t) / T * 190; if (y < 74 || y > MG_H) continue; x.globalAlpha = Math.min(1, (y - 74) / 26); // 上の文字にかからないように、すっと出てくる
         const lanes = n.l === 2 ? [0, 1] : [n.l];
         if (n.l === 2) { x.fillStyle = '#ffd23f'; x.fillRect(170, y - 4, 140, 8); }
         for (const w of lanes) { if (n.h[w]) continue; x.beginPath(); x.arc(w ? 310 : 170, y, 18, 0, Math.PI * 2); x.fillStyle = n.l === 2 ? '#ffd23f' : w ? P2C : P1C; x.fill(); x.strokeStyle = MG_INK; x.lineWidth = 2.5; x.stroke(); }
       }
+      x.globalAlpha = 1;
       for (const p of S.pops) mgText(x, p.s, p.x, L - 40 - (S.t - p.t) / 20, 15, p.c);
       if (S.t < 1500) mgText(x, '線の円に来たらたたく！ 金のノーツは2人同時に', MG_W / 2, 120, 15, '#5d6170');
       mgLegend(x, S, 'W・スペースでたたく', 'クリックでたたく');
@@ -298,7 +299,7 @@ function startMini(kind, cv, done, opt = {}) { // opt.screen：遊ぶ画面（�
     const tm = performance.now(), dt = Math.min(50, tm - last); last = tm;
     G.update(S, dt, C);
     for (const k of [1, 2]) { C[k].press = false; C[k].pick = null; C[k].step = 0; }
-    G.draw(S, x);
+    x.setTransform(cv.width / MG_W, 0, 0, cv.height / MG_H, 0, 0); G.draw(S, x); // 大きなキャンバスでも 480×300 の座標で描く
     if (tm - sent > 60) { sent = tm; send(); }
     if (S.over) { send(); stop(); setTimeout(() => done(S.tier), 1200); } // 結果を少し見せてから
   };
@@ -320,6 +321,7 @@ function startMiniView(kind, cv) {
   miniStop = stop;
   const loop = () => {
     if (!alive) return; if (curScreen !== 'scr-reward') { stop(); return; } raf = requestAnimationFrame(loop);
+    x.setTransform(cv.width / MG_W, 0, 0, cv.height / MG_H, 0, 0);
     if (miniView && miniView.S) MG[kind].draw(miniView.S, x);
     else { mgPaper(x); mgText(x, 'まもなく始まります…', MG_W / 2, MG_H / 2, 18, '#5d6170'); }
   };

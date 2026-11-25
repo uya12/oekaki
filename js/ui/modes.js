@@ -202,7 +202,7 @@ function runContinue() { const run = curRun(); if (run && run.pending) showRewar
 // オンライン：ホストがえらんでいる様子を、ゲスト（サポーター）の画面にも同じように見せる
 const rewardOnline = () => (NET.role === 'host' && NET.open && !NET.vsMode) || NET.role === 'guest';
 // ふしぎのマスのイラスト
-const evArt = evt => evt.id && EVENTS[evt.id] ? `<canvas class="ev-art" data-id="${evt.id}" width="480" height="300"></canvas>` : `<span class="rw-mark">${evt.mark || '？'}</span>`;
+const evArt = evt => evt.id && EVENTS[evt.id] ? `<canvas class="ev-art" data-id="${evt.id}" width="960" height="600"></canvas>` : `<span class="rw-mark">${evt.mark || '？'}</span>`;
 function drawEvArt(root) { root.querySelectorAll('canvas.ev-art').forEach(c => drawEventArt(c.getContext('2d'), c.dataset.id, c.width, c.height)); }
 function showReward() {
   const run = curRun(), guest = NET.role === 'guest'; if (!run) { if (!guest) showStory(); return; }
@@ -215,14 +215,15 @@ function showReward() {
     : kind === 'elite' ? `強敵をたおした！ ごほうびをえらぼう（あと${left}枚）` : `${run.stage}階 クリア！ ごほうびを1枚えらぼう`;
   $('#rewardSub').textContent = (evt && kind !== 'event' ? evt.text + '　' : '') + (kind === 'event' ? '' : 'えらんだら、マップで次の道をえらぼう。') + (kind === 'event' ? '' : guest ? '　カードをタップすると、ホストに「これがいい！」と提案できます（決めるのはホスト）' : online ? '　サポーターの提案には「P2のおすすめ」がつきます。えらんでいるカードは相手の画面にも見えます' : '');
   const row = $('#rewardRow'); row.innerHTML = ''; row.classList.toggle('watch', guest);
+  $('#scr-reward').classList.toggle('ev-mode', kind === 'event' && !!evt); // ふしぎのマスは、画面いっぱいに大きく見せる
   if (miniStop && !(kind === 'event' && evt && evt.playing && !evt.done)) miniStop(); // ほかの画面に変わったら、ミニゲームは止める
   if (kind === 'event' && evt && evt.playing && !evt.done) { // ふしぎのマス：ミニゲーム
-    row.innerHTML = `<div class="rw-event mini"><canvas class="mini-cv" width="480" height="300"></canvas><p class="ev-wait">${online ? `2人で協力！ あなたは ${guest ? 'P2（サポーター）' : 'P1（ランナー）'}：画面をタップ・ドラッグして操作` : '2人で協力！ P1（ランナー）はキーボード、P2（サポーター）はマウスで操作'}</p></div>`;
+    row.innerHTML = `<div class="rw-event mini"><canvas class="mini-cv" width="960" height="600"></canvas><p class="ev-wait">${online ? `2人で協力！ あなたは ${guest ? 'P2（サポーター）' : 'P1（ランナー）'}：画面をタップ・ドラッグして操作` : '2人で協力！ P1（ランナー）はキーボード、P2（サポーター）はマウスで操作'}</p></div>`;
     const cv = row.querySelector('.mini-cv');
     if (guest) startMiniView(evt.playing, cv); // ホストから届いたようすを描いて、操作を送る
     else startMini(evt.playing, cv, tier => { if (curRun() !== run || curScreen !== 'scr-reward') return; const res = finishMini(run, tier); if (!res) return; if (res.treasure) { run.rwKind = 'treasure'; run.extra = res.treasure - 1; run.choices = null; } saveStory(); showReward(); });
   } else if (kind === 'event' && evt && evt.opts && !evt.done) { // ふしぎのマス：どうするかえらぶ
-    row.innerHTML = `<div class="rw-event">${evArt(evt)}<p>${evt.text}</p><div class="ev-opts">${evt.opts.map((o, i) => `<button class="ev-opt${i === evt.opts.length - 1 ? ' safe' : ''}" data-i="${i}"${guest ? ' disabled' : ''}><b>${o.label}</b><small>${o.desc}</small></button>`).join('')}</div>${guest ? '<p class="ev-wait">ホストがえらんでいます…</p>' : ''}</div>`;
+    row.innerHTML = `<div class="rw-event ev-big">${evArt(evt)}<div class="ev-side"><p class="ev-text">${evt.text}</p><div class="ev-opts">${evt.opts.map((o, i) => `<button class="ev-opt${i === evt.opts.length - 1 ? ' safe' : ''}" data-i="${i}"${guest ? ' disabled' : ''}><b>${o.label}</b><small>${o.desc}</small></button>`).join('')}</div>${guest ? '<p class="ev-wait">ホストがえらんでいます…</p>' : ''}</div></div>`;
     if (!guest) row.querySelectorAll('.ev-opt').forEach(bt => bt.addEventListener('click', () => {
       const res = resolveEvent(run, +bt.dataset.i); if (!res) return;
       SFX.pick();
@@ -230,8 +231,8 @@ function showReward() {
       saveStory(); showReward();
     }));
   } else if (!run.choices.length) { // ふしぎのマスの結果・もう選べるものがないとき
-    row.innerHTML = (kind === 'event' && evt ? `<div class="rw-event">${evArt(evt)}${evt.picked ? `<p class="ev-picked">えらんだ：${evt.picked}</p>` : ''}<p>${evt.text}</p></div>` : '<p class="rw-none">ごほうびは全部そろいました！</p>')
-      + (guest ? '' : '<button class="btn blue big" id="rwSkip">マップへ</button>');
+    const skip = guest ? '' : '<button class="btn blue big" id="rwSkip">マップへ</button>';
+    row.innerHTML = kind === 'event' && evt ? `<div class="rw-event ev-big">${evArt(evt)}<div class="ev-side">${evt.picked ? `<p class="ev-picked">えらんだ：${evt.picked}</p>` : ''}<p class="ev-text">${evt.text}</p>${skip}</div></div>` : '<p class="rw-none">ごほうびは全部そろいました！</p>' + skip;
 
     if (!guest) $('#rwSkip').addEventListener('click', () => { run.pending = false; run.choices = null; run.evt = null; run.extra = 0; saveStory(); mapSel = null; showStory(); });
   }
