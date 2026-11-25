@@ -122,7 +122,7 @@ function runStageCleared(sv) {
     sv.lastPath = run.path.map(id => { const n = mapNode(run, id); return n.type === 'stage' || n.type === 'elite' || n.type === 'boss' ? makeNodePage(n).name : NODE_T[n.type].name; });
     sv.run = null; sv.cleared = true; return;
   }
-  completeNode(run, nd);
+  completeNode(run, nd); run.curse = null; // のろいは、ステージを1つクリアするまで
   run.pending = true; run.choices = null; run.rwKind = nd.type === 'elite' ? 'elite' : 'stage'; run.extra = nd.type === 'elite' ? 1 : 0;
 }
 // 休けい：アップグレードできるもの（カード・ランナーの強化）から3つ
@@ -131,19 +131,6 @@ function rollUpgrades(run) {
   const ups = run.deck.filter(id => CARD_UP[id] && ((run.ups || {})[id] || 0) < UP_MAX).map(id => ({ type: 'up', id, lv: ((run.ups || {})[id] || 0) + 1 }));
   const rups = Object.keys(RUN_UP).filter(k => run.boosts[k] && run.boosts[k] < 3).map(k => ({ type: 'rup', id: k, lv: Math.min(3, run.boosts[k]) + 1 }));
   return shuffle(ups.concat(rups)).slice(0, 3);
-}
-// ふしぎ：いいことが1つ起こる
-function runEvent(run) {
-  const shuffle = a => { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
-  const cards = shuffle(SUPPORT_DECK.filter(id => !run.deck.includes(id)));
-  const ups = shuffle(run.deck.filter(id => CARD_UP[id] && ((run.ups || {})[id] || 0) < UP_MAX));
-  const rb = shuffle(Object.keys(RUN_UP).filter(k => (run.boosts[k] || 0) < 3));
-  const evs = [];
-  if (cards.length) evs.push(() => { const id = cards[0]; applyReward(run, { type: 'card', id }); return { title: 'ふしぎなインクだまり', text: `インクの中から、カードが1枚出てきた！「${CARD[id].name}」を手に入れた。`, card: id }; });
-  if (ups.length) evs.push(() => { const id = ups[0], lv = ((run.ups || {})[id] || 0) + 1; applyReward(run, { type: 'up', id, lv }); return { title: 'えんぴつけずり', text: `道ばたのえんぴつけずりで、カードをとがらせた。「${CARD[id].name}」が ${stars(lv)} になった！`, card: id }; });
-  if (rb.length) evs.push(() => { const k = rb[0], had = run.boosts[k] || 0; run.boosts[k] = Math.min(3, had + 1); return { title: 'げんきの泉', text: had ? `泉の水を飲んだ。ランナーの「${BOOSTS[k].name}」が ${stars(Math.min(3, had + 1) - 1)} になった！` : `泉の水を飲んだ。ランナーが「${BOOSTS[k].name}」を身につけた！`, mark: BOOSTS[k].mark }; });
-  evs.push(() => ({ title: '大王の落とし物', text: '消しゴム大王が、たからばこを落としていった。ごほうびを2枚えらべる！', treasure: 2 }));
-  return evs[Math.floor(Math.random() * evs.length)]();
 }
 
 // 記録（ランク・メダル）を残す場所：ステージごと。強敵は別の記録（ステージ番号 + 100）。EX は EX_IDX

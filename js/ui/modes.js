@@ -172,7 +172,7 @@ function showStory() {
       ${nd ? nodeInfoHtml(nd) : ''}
       <p class="si-note">${run.pending ? 'ごほうびをえらんでから、次のマスへ進もう。' : run.cur != null ? 'さっき負けたマスに、もう一度挑戦しよう。' : '光っているマスが、次に進めるマスです。マスをタップすると説明が見られます。'}</p>
       <div class="si-run"><div><b>サポーターのカード（${run.deck.length}枚）</b><div class="rw-deck">${deckIconsHtml(run.deck, run.ups)}</div></div>
-        <div><b>強化</b><div class="rw-boosts">${boostSummary(run)}</div></div></div>`;
+        <div><b>強化</b><div class="rw-boosts">${boostSummary(run)}${curseSummary(run)}</div></div></div>`;
     drawDeckIcons(intro);
     const bg = $('#btnRunGo'); if (bg) bg.addEventListener('click', () => { if (run.pending) showReward(); else enterNode(nd); });
     $('#btnRunNew').addEventListener('click', () => {
@@ -208,10 +208,18 @@ function showReward() {
   const online = rewardOnline();
   $('#rewardTitle').textContent = evt ? `ふしぎ：${evt.title}` : kind === 'rest' ? '休けい：アップグレードを1つえらぼう' : kind === 'treasure' ? `たからばこ！ ごほうびをえらぼう${left > 1 ? `（あと${left}枚）` : ''}`
     : kind === 'elite' ? `強敵をたおした！ ごほうびをえらぼう（あと${left}枚）` : `${run.stage}階 クリア！ ごほうびを1枚えらぼう`;
-  $('#rewardSub').textContent = (evt ? evt.text + '　' : '') + (kind === 'event' ? '' : 'えらんだら、マップで次の道をえらぼう。') + (kind === 'event' ? '' : guest ? '　カードをタップすると、ホストに「これがいい！」と提案できます（決めるのはホスト）' : online ? '　サポーターの提案には「P2のおすすめ」がつきます。えらんでいるカードは相手の画面にも見えます' : '');
+  $('#rewardSub').textContent = (evt && kind !== 'event' ? evt.text + '　' : '') + (kind === 'event' ? '' : 'えらんだら、マップで次の道をえらぼう。') + (kind === 'event' ? '' : guest ? '　カードをタップすると、ホストに「これがいい！」と提案できます（決めるのはホスト）' : online ? '　サポーターの提案には「P2のおすすめ」がつきます。えらんでいるカードは相手の画面にも見えます' : '');
   const row = $('#rewardRow'); row.innerHTML = ''; row.classList.toggle('watch', guest);
-  if (!run.choices.length) { // ふしぎのマスの結果・もう選べるものがないとき
-    row.innerHTML = (kind === 'event' && evt ? `<div class="rw-event">${evt.card ? '<canvas width="208" height="128"></canvas>' : `<span class="rw-mark">${evt.mark || '？'}</span>`}<p>${evt.text}</p></div>` : '<p class="rw-none">ごほうびは全部そろいました！</p>')
+  if (kind === 'event' && evt && evt.opts && !evt.done) { // ふしぎのマス：どうするかえらぶ
+    row.innerHTML = `<div class="rw-event"><span class="rw-mark">${evt.mark || '？'}</span><p>${evt.text}</p><div class="ev-opts">${evt.opts.map((o, i) => `<button class="ev-opt${i === evt.opts.length - 1 ? ' safe' : ''}" data-i="${i}"${guest ? ' disabled' : ''}><b>${o.label}</b><small>${o.desc}</small></button>`).join('')}</div>${guest ? '<p class="ev-wait">ホストがえらんでいます…</p>' : ''}</div>`;
+    if (!guest) row.querySelectorAll('.ev-opt').forEach(bt => bt.addEventListener('click', () => {
+      const res = resolveEvent(run, +bt.dataset.i); if (!res) return;
+      SFX.pick();
+      if (res.treasure) { run.rwKind = 'treasure'; run.extra = res.treasure - 1; run.choices = null; }
+      saveStory(); showReward();
+    }));
+  } else if (!run.choices.length) { // ふしぎのマスの結果・もう選べるものがないとき
+    row.innerHTML = (kind === 'event' && evt ? `<div class="rw-event">${evt.card ? '<canvas width="208" height="128"></canvas>' : `<span class="rw-mark">${evt.mark || '？'}</span>`}${evt.picked ? `<p class="ev-picked">えらんだ：${evt.picked}</p>` : ''}<p>${evt.text}</p></div>` : '<p class="rw-none">ごほうびは全部そろいました！</p>')
       + (guest ? '' : '<button class="btn blue big" id="rwSkip">マップへ</button>');
     if (kind === 'event' && evt && evt.card) iconCanvas(row.querySelector('canvas'), evt.card, 104, 64);
     if (!guest) $('#rwSkip').addEventListener('click', () => { run.pending = false; run.choices = null; run.evt = null; run.extra = 0; saveStory(); mapSel = null; showStory(); });
@@ -237,7 +245,7 @@ function showReward() {
     } else b.addEventListener('click', () => rewardSuggest(ci)); // ゲスト：タップで提案
     row.appendChild(b);
   });
-  $('#rewardHave').innerHTML = `<div><b>サポーターのカード（${run.deck.length}枚）</b><div class="rw-deck">${deckIconsHtml(run.deck, run.ups)}</div></div><div><b>強化</b><div class="rw-boosts">${boostSummary(run)}</div></div>`;
+  $('#rewardHave').innerHTML = `<div><b>サポーターのカード（${run.deck.length}枚）</b><div class="rw-deck">${deckIconsHtml(run.deck, run.ups)}</div></div><div><b>強化</b><div class="rw-boosts">${boostSummary(run)}${curseSummary(run)}</div></div>`;
   drawDeckIcons($('#rewardHave'));
   show('scr-reward');
   markReward();

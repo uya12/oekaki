@@ -167,7 +167,7 @@ const runLv = k => Math.min(3, runBoost(k));
 const runVal = k => RUN_UP[k].v[runLv(k)];
 // オンラインのゲストは、ホストから届いた冒険（NET.mrun）を使う
 const curRun = () => NET.role === 'guest' && NET.mrun !== undefined ? NET.mrun : storySave[COOP_LV].run;
-const runShare = run => run ? { stage: run.stage, deck: run.deck, ups: run.ups || {}, boosts: run.boosts, pending: run.pending, choices: run.choices, rwKind: run.rwKind, extra: run.extra || 0, evt: run.evt || null } : null;
+const runShare = run => run ? { stage: run.stage, deck: run.deck, ups: run.ups || {}, boosts: run.boosts, pending: run.pending, choices: run.choices, rwKind: run.rwKind, extra: run.extra || 0, evt: run.evt || null, curse: run.curse || null, maxHpDown: run.maxHpDown || 0 } : null;
 const inRun = () => COOP && storyIdx !== EX_IDX && !!curRun();
 const runBoost = k => inRun() ? (curRun().boosts[k] || 0) : 0;
 const runUps = () => inRun() ? (curRun().ups || {}) : {};
@@ -177,7 +177,7 @@ function runCharacter(base) {
   if (!inRun()) return base;
   const b = curRun().boosts, ch = Object.assign({}, base);
   const v = k => RUN_UP[k].v[Math.min(3, b[k] || 0)];
-  ch.maxHp = base.maxHp + v('hp');
+  ch.maxHp = Math.max(40, base.maxHp + v('hp') - (curRun().maxHpDown || 0)); // ふしぎのマスで最大HPがへることがある
   ch.runSpeed = base.runSpeed + v('spd');
   ch.jumpV = base.jumpV + v('jump');
   return ch;
@@ -216,5 +216,5 @@ const exOpen = lv => !!storySave[lv].cleared;
 const exUnlocked = () => exOpen(COOP_LV) || DBG.on;
 const medalHtml = (m, extra = '') => { const k = bestMedal(m); return k ? medalOne(k, extra) : `<span class="medal off${extra}" aria-label="メダルなし"></span>`; };
 function saveStory() { try { localStorage.setItem(STORY_KEY, JSON.stringify(storySave)); } catch (_e) {} }
-const roundLen = () => COOP ? pageDef(storyIdx).time * 60 : ROUND_T;
+const roundLen = () => COOP ? Math.max(40, pageDef(storyIdx).time - ((runCurse() || {}).time || 0)) * 60 : ROUND_T; // のろい：制限時間がへる
 const COOP_STATS = { tries: 0, clears: 0, best: null };

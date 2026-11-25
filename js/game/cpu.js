@@ -11,7 +11,7 @@ function cpuX(ahead) {
   return lo < hi ? rand(lo, hi) : null;
 }
 function cpuUpdate() {
-  const L = CPU_LV[COOP_LV], SP = pageDef(storyIdx);
+  const L = CPU_LV[COOP_LV], SP = Object.assign({}, pageDef(storyIdx)); SP.cpu *= (runCurse() || {}).cpu || 1; // のろい：大王が強い
   cpu.energy = Math.min(EMAX, cpu.energy + L.regen * SP.cpu);
   if (--cpu.timer > 0) return;
   cpu.timer = Math.round((L.every + rand(-20, 20)) / SP.cpu);

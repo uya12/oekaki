@@ -53,6 +53,7 @@ function render() {
       st.story.forEach((line, k) => drawCenterText(line, 15, C.ink, 136 + k * 23, 1, rcx));
       drawCenterText(`ヒント：${st.hint}`, 18, C.builder, 216, 1, rcx);
       const th = themeOf(st); if (th) drawCenterText(`ステージの特徴「${THEME[th].name}」：${THEME[th].desc}`, 16, '#8a5a00', 246, 1, rcx);
+      const cu = runCurse(); if (cu) drawCenterText(`☠ のろい：${[cu.hp ? `はじめのHP −${Math.round(cu.hp * 100)}%` : '', cu.time ? `制限時間 −${cu.time}秒` : '', cu.cpu > 1 ? '大王が強い' : '', cu.energy0 ? 'エネルギー0から' : ''].filter(Boolean).join('・')}`, 16, '#5b3a9a', 272, 1, rcx);
       drawCenterText(String(n), 90 + f * 30, C.runner, rcy + 60, 0.4 + f * 0.6, rcx);
     } else if (SPLIT === 'o') {
       const me = netIAmRunner(), dy = document.body.classList.contains('mob-net') ? 52 : 0; // スマホはタイマーの下にボタンがあるので、少し下に

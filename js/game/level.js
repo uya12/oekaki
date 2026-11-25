@@ -259,7 +259,9 @@ function resetRound() {
     safeX: sx, safeY: sy0, squash: 1, walk: 0, wind: 0, onIce: false, glued: false, airJ: 0, guts: runVal('guts')
   };
   enemies = []; bullets = []; particles = []; popups = [];
-  energy = COOP ? Math.min(EMAX, 60 + 20 * runBoost('energy')) : EMAX; timeLeft = roundLen(); tick = 0; state = 'countdown'; countT = COOP ? 300 : 180; camX = 0; shake = 0; hitStop = 0; banner = null; // 対戦：ビルダーはエネルギー満タンで始まる
+  if (COOP && runCurse() && runCurse().hp) P.hp = Math.max(1, Math.round(P.maxHp * (1 - runCurse().hp))); // のろい：はじめのHPがへる
+  // のろい：エネルギー0から
+  energy = COOP ? ((runCurse() || {}).energy0 ? 0 : Math.min(EMAX, 60 + 20 * runBoost('energy'))) : EMAX; timeLeft = roundLen(); tick = 0; state = 'countdown'; countT = COOP ? 300 : 180; camX = 0; shake = 0; hitStop = 0; banner = null; // 対戦：ビルダーはエネルギー満タンで始まる
   effects = { dark: 0, rev: 0, heavy: 0, boost: 0, freeze: 0, slip: 0, float: 0, seal: 0, gust: 0, gustDir: 1, regen: 0, jumpup: 0, djump: 0, tail: 0, cushion: 0, spikeproof: 0, lamp: 0, slow: 0, nojam: 0 };
   cpu = { energy: 40, timer: 90 };
   trail = []; spawnQueue = [];
