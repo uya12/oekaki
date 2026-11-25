@@ -167,7 +167,7 @@ const runLv = k => Math.min(3, runBoost(k));
 const runVal = k => RUN_UP[k].v[runLv(k)];
 // オンラインのゲストは、ホストから届いた冒険（NET.mrun）を使う
 const curRun = () => NET.role === 'guest' && NET.mrun !== undefined ? NET.mrun : storySave[COOP_LV].run;
-const runShare = run => run ? { stage: run.stage, deck: run.deck, ups: run.ups || {}, boosts: run.boosts, pending: run.pending, choices: run.choices, rwKind: run.rwKind, extra: run.extra || 0, evt: run.evt || null, curse: run.curse || null, maxHpDown: run.maxHpDown || 0 } : null;
+const runShare = run => run ? { stage: run.stage, deck: run.deck, ups: run.ups || {}, boosts: run.boosts, pending: run.pending, choices: run.choices, rwKind: run.rwKind, extra: run.extra || 0, evt: run.evt || null, curse: run.curse || null, maxHpDown: run.maxHpDown || 0, hp: runHpNow(run), hpMax: runMaxHp(run) } : null;
 const inRun = () => COOP && storyIdx !== EX_IDX && !!curRun();
 const runBoost = k => inRun() ? (curRun().boosts[k] || 0) : 0;
 const runUps = () => inRun() ? (curRun().ups || {}) : {};
@@ -200,13 +200,23 @@ function rollRewards(run) {
   while (out.length < 3 && rest.length) out.push(rest.shift());
   return shuffle(out);
 }
+// 冒険のHP（ステージをまたいで引きつぐ）。run.hp が null のときは満タン
+function runMaxHp(run) {
+  if (!storyCH || NET.role === 'guest') return run.hpMax || 100; // ゲストはホストから届いた値を使う
+  return Math.max(40, storyCH.maxHp + RUN_UP.hp.v[Math.min(3, run.boosts.hp || 0)] - (run.maxHpDown || 0));
+}
+const runHpNow = run => { const m = runMaxHp(run); return run.hp == null ? m : clamp(Math.ceil(run.hp), 0, m); };
+function healRun(run, amount) { const m = runMaxHp(run), now = runHpNow(run), nx = Math.min(m, Math.round(now + amount)); run.hp = nx >= m ? null : nx; return Math.round(nx - now); }
 function applyReward(run, r) {
+  const maxBefore = runMaxHp(run);
+  if (r.type === 'heal') { healRun(run, maxBefore * r.pct); return; }
   if (r.type === 'card') { if (!run.deck.includes(r.id)) run.deck.push(r.id); run.deck.sort((a, b) => SUPPORT_DECK.indexOf(a) - SUPPORT_DECK.indexOf(b)); }
   else if (r.type === 'up') { run.ups = run.ups || {}; run.ups[r.id] = Math.min(UP_MAX, (run.ups[r.id] || 0) + 1); }
   else if (r.type === 'rup') run.boosts[r.id] = Math.min(3, (run.boosts[r.id] || 0) + 1);
   else run.boosts[r.id] = (run.boosts[r.id] || 0) + 1;
+  const gain = runMaxHp(run) - maxBefore; if (gain > 0 && run.hp != null) run.hp += gain; // 最大HPがふえたら、そのぶん回復
 }
-const rewardName = r => r.type === 'card' ? CARD[r.id].name : r.type === 'up' ? `${CARD[r.id].name} ${stars(r.lv)}` : r.type === 'rup' ? `${BOOSTS[r.id].name} ${stars(r.lv - 1)}` : BOOSTS[r.id].name;
+const rewardName = r => r.type === 'heal' ? '休む' : r.type === 'card' ? CARD[r.id].name : r.type === 'up' ? `${CARD[r.id].name} ${stars(r.lv)}` : r.type === 'rup' ? `${BOOSTS[r.id].name} ${stars(r.lv - 1)}` : BOOSTS[r.id].name;
 // メダル：銀＝クリア / 金＝Sランク / 虹＝ノーダメージ。表示するのはいちばん良い色の1枚だけ
 const MEDAL_ORDER = ['silver', 'gold', 'rainbow'];
 const MEDAL_JP = { silver: ['銀', 'クリア'], gold: ['金', 'Sランク'], rainbow: ['虹', 'ノーダメージ'] };

@@ -8,7 +8,7 @@
 const NODE_T = {
   stage: { mark: '戦', name: 'ステージ', desc: '大王のじゃまを越えてゴールをめざす。クリアするとごほうびを1枚えらべる' },
   elite: { mark: '強', name: '強敵ステージ', desc: '大王がいつもより強く、敵のダメージも大きい。そのかわり、クリアするとごほうびを2枚えらべる' },
-  rest: { mark: '休', name: '休けい', desc: 'ひと休み。持っているカードかランナーの強化を、1つアップグレードできる' },
+  rest: { mark: '休', name: '休けい', desc: 'ひと休み。「休む」でHPを回復するか、カード・ランナーの強化を1つアップグレードできる' },
   treasure: { mark: '宝', name: 'たからばこ', desc: 'ステージなしで、ごほうびを1枚えらべる' },
   event: { mark: '？', name: 'ふしぎ', desc: '何が起こるかはお楽しみ。いいことがあるかも' },
   boss: { mark: '王', name: 'ボス', desc: '消しゴム大王との対決！' }
@@ -122,6 +122,8 @@ function runStageCleared(sv) {
     sv.lastPath = run.path.map(id => { const n = mapNode(run, id); return n.type === 'stage' || n.type === 'elite' || n.type === 'boss' ? makeNodePage(n).name : NODE_T[n.type].name; });
     sv.run = null; sv.cleared = true; return;
   }
+  // HP を引きつぐ。ボスをたおしたら満タンにもどる
+  run.hp = nd.type === 'boss' ? null : Math.max(1, Math.ceil(P.hp)); run.hpMax = P.maxHp; run.bossHeal = nd.type === 'boss';
   completeNode(run, nd); run.curse = null; // のろいは、ステージを1つクリアするまで
   run.pending = true; run.choices = null; run.rwKind = nd.type === 'elite' ? 'elite' : 'stage'; run.extra = nd.type === 'elite' ? 1 : 0;
 }
@@ -130,7 +132,7 @@ function rollUpgrades(run) {
   const shuffle = a => { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
   const ups = run.deck.filter(id => CARD_UP[id] && ((run.ups || {})[id] || 0) < UP_MAX).map(id => ({ type: 'up', id, lv: ((run.ups || {})[id] || 0) + 1 }));
   const rups = Object.keys(RUN_UP).filter(k => run.boosts[k] && run.boosts[k] < 3).map(k => ({ type: 'rup', id: k, lv: Math.min(3, run.boosts[k]) + 1 }));
-  return shuffle(ups.concat(rups)).slice(0, 3);
+  return [{ type: 'heal', pct: 0.4 }].concat(shuffle(ups.concat(rups)).slice(0, 2)); // 休む（HP回復）＋アップグレード2つ
 }
 
 // 記録（ランク・メダル）を残す場所：ステージごと。強敵は別の記録（ステージ番号 + 100）。EX は EX_IDX

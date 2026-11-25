@@ -26,7 +26,7 @@ const EV = {
   loseBoost(run) { const k = pickOne(Object.keys(run.boosts).filter(k => run.boosts[k] > 0 && BOOSTS[k].who === 'runner')); if (!k) return null; run.boosts[k]--; if (!run.boosts[k]) delete run.boosts[k]; return `ランナーの「${BOOSTS[k].name}」が弱くなった`; },
   curse(run, c) {
     const cu = run.curse = run.curse || {}, out = [];
-    if (c.hp) { cu.hp = Math.min(0.6, (cu.hp || 0) + c.hp); out.push(`はじめのHPが${Math.round(c.hp * 100)}%へる`); }
+    if (c.hp) { cu.hp = Math.min(0.6, (cu.hp || 0) + c.hp); out.push(`はじめにHPが最大HPの${Math.round(c.hp * 100)}%へる`); }
     if (c.time) { cu.time = Math.min(60, (cu.time || 0) + c.time); out.push(`制限時間が${c.time}秒へる`); }
     if (c.cpu) { cu.cpu = Math.min(1.6, (cu.cpu || 1) * c.cpu); out.push('消しゴム大王が強い'); }
     if (c.energy0) { cu.energy0 = true; out.push('エネルギーが0から'); }
@@ -40,7 +40,7 @@ const EVENTS = {
   // ---- いいことだけ ----
   inkpool: { title: 'ふしぎなインクだまり', mark: '💧', good: 1, cond: r => EV.newCards(r).length, text: 'インクの中から、何か出てきた！', act: r => ({ text: evLines(EV.addCard(r)) }) },
   sharpener: { title: 'えんぴつけずり', mark: '✎', good: 1, cond: r => EV.upCards(r).length, text: '道ばたのえんぴつけずりで、カードをとがらせた！', act: r => ({ text: evLines(EV.upCard(r)) }) },
-  spring: { title: 'げんきの泉', mark: '♥', good: 1, cond: r => EV.boostable(r).length, text: '泉の水を飲んだ！', act: r => ({ text: evLines(EV.addBoost(r)) }) },
+  spring: { title: 'げんきの泉', mark: '♥', good: 1, cond: r => EV.boostable(r).length, text: '泉の水を飲んだ！', act: r => ({ text: evLines(`HPが ${healRun(r, runMaxHp(r) * 0.3)} 回復した`, EV.addBoost(r)) }) },
   dropped: { title: '大王の落とし物', mark: '宝', good: 1, text: '消しゴム大王が、たからばこを落としていった。ごほうびを2枚えらべる！', act: () => ({ text: 'ごほうびを2枚えらぼう。', treasure: 2 }) },
   // ---- えらぶ（リスクとごほうび） ----
   vending: { title: 'あやしい自動はんばいき', mark: '¥', text: '「HPとひきかえに、カードを売ります」と書いてある…',

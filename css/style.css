@@ -872,3 +872,7 @@ body.mobile.land .reward-have{grid-template-columns:1fr 1fr}
 body.mobile.land .ev-opt{padding:6px 8px;flex-basis:150px}
 body.mobile.land .ev-opt b{font-size:14px}
 body.mobile.land .ev-opt small{font-size:10.5px}
+.rw-pick.heal{background:#ffe3ec}
+.rw-chip.hp{background:#dff3e4;border-color:#2a9d5c;color:#1f6e40}
+.rw-chip.hp.mid{background:#fff1cc;border-color:#c08a00;color:#7a5600}
+.rw-chip.hp.low{background:#ffdde3;border-color:#d1293f;color:#a3122a}

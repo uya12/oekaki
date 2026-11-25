@@ -93,6 +93,8 @@ function startCoop() {
 // 冒険のマップ：分かれ道を自分でえらんで、15階のボスをめざす。EXステージは別に1回ずつ遊ぶ
 // storySel：0 = 冒険 / EX_IDX = EXステージ。mapSel = マップでえらんでいるマス
 let mapSel = null;
+// ランナーのいまのHP（ステージをまたいで引きつぐ）
+const hpChip = run => { const m = runMaxHp(run), now = runHpNow(run), r = now / m; return `<span class="rw-chip hp ${r <= 0.3 ? 'low' : r <= 0.6 ? 'mid' : ''}">HP ${now} / ${m}</span>`; };
 const boostSummary = run => Object.keys(BOOSTS).filter(k => run.boosts[k]).map(k => `<span class="rw-chip ${BOOSTS[k].who}">${BOOSTS[k].mark} ${BOOSTS[k].name}${BOOSTS[k].who === 'runner' ? (run.boosts[k] > 1 ? ` <b class="tlv">${stars(Math.min(3, run.boosts[k]) - 1)}</b>` : '') : run.boosts[k] > 1 ? ' ×' + run.boosts[k] : ''}</span>`).join('') || '<span class="rw-none">まだなし</span>';
 function deckIconsHtml(deck, ups = {}) { return deck.map(id => `<span class="rw-card" data-id="${id}"><canvas width="96" height="64"></canvas><small>${CARD[id].name}${ups[id] ? `<b class="tlv">${stars(ups[id])}</b>` : ''}</small></span>`).join(''); }
 function drawDeckIcons(root) { root.querySelectorAll('.rw-card').forEach(el => iconCanvas(el.querySelector('canvas'), el.dataset.id, 48, 32)); }
@@ -170,9 +172,9 @@ function showStory() {
     intro.innerHTML = `<div class="si-head"><span class="si-page">${nd ? `${nd.f + 1}階 / ${STORY.length}　${t.name}` : ''}</span><h3 class="hand">${name}</h3></div>
       <div class="si-btns">${go}<button class="btn" id="btnRunNew">最初からやり直す</button></div>
       ${nd ? nodeInfoHtml(nd) : ''}
-      <p class="si-note">${run.pending ? 'ごほうびをえらんでから、次のマスへ進もう。' : run.cur != null ? 'さっき負けたマスに、もう一度挑戦しよう。' : '光っているマスが、次に進めるマスです。マスをタップすると説明が見られます。'}</p>
+      <p class="si-note">${run.pending ? 'ごほうびをえらんでから、次のマスへ進もう。' : run.cur != null ? 'さっき負けたマスに、もう一度挑戦しよう（HPは、このマスに入ったときにもどる）。' : '光っているマスが、次に進めるマスです。HPは次のステージに引きつぎます（ボスをたおすと満タン）。'}</p>
       <div class="si-run"><div><b>サポーターのカード（${run.deck.length}枚）</b><div class="rw-deck">${deckIconsHtml(run.deck, run.ups)}</div></div>
-        <div><b>強化</b><div class="rw-boosts">${boostSummary(run)}${curseSummary(run)}</div></div></div>`;
+        <div><b>強化</b><div class="rw-boosts">${hpChip(run)}${boostSummary(run)}${curseSummary(run)}</div></div></div>`;
     drawDeckIcons(intro);
     const bg = $('#btnRunGo'); if (bg) bg.addEventListener('click', () => { if (run.pending) showReward(); else enterNode(nd); });
     $('#btnRunNew').addEventListener('click', () => {
@@ -190,7 +192,7 @@ function enterNode(nd) {
   SFX.pick();
   if (nd.type === 'stage' || nd.type === 'elite' || nd.type === 'boss') { run.cur = nd.id; saveStory(); setNodePage(nd); startStoryPage(nd.f); return; }
   completeNode(run, nd); run.pending = true; run.choices = null; run.extra = 0; run.evt = null;
-  if (nd.type === 'rest') { run.choices = rollUpgrades(run); run.rwKind = run.choices.length ? 'rest' : 'treasure'; if (!run.choices.length) run.choices = null; }
+  if (nd.type === 'rest') { run.choices = rollUpgrades(run); run.rwKind = 'rest'; }
   else if (nd.type === 'treasure') run.rwKind = 'treasure';
   else { const ev = runEvent(run); run.evt = ev; if (ev.treasure) { run.rwKind = 'treasure'; run.extra = ev.treasure - 1; } else run.rwKind = 'event'; }
   saveStory(); showReward();
@@ -206,7 +208,7 @@ function showReward() {
   if (!guest && kind !== 'event' && (!run.choices || !run.choices.length)) { run.choices = kind === 'rest' ? rollUpgrades(run) : rollRewards(run); saveStory(); }
   run.choices = kind === 'event' ? [] : run.choices || [];
   const online = rewardOnline();
-  $('#rewardTitle').textContent = evt ? `ふしぎ：${evt.title}` : kind === 'rest' ? '休けい：アップグレードを1つえらぼう' : kind === 'treasure' ? `たからばこ！ ごほうびをえらぼう${left > 1 ? `（あと${left}枚）` : ''}`
+  $('#rewardTitle').textContent = evt ? `ふしぎ：${evt.title}` : kind === 'rest' ? '休けい：休むか、アップグレードを1つえらぼう' : kind === 'treasure' ? `たからばこ！ ごほうびをえらぼう${left > 1 ? `（あと${left}枚）` : ''}`
     : kind === 'elite' ? `強敵をたおした！ ごほうびをえらぼう（あと${left}枚）` : `${run.stage}階 クリア！ ごほうびを1枚えらぼう`;
   $('#rewardSub').textContent = (evt && kind !== 'event' ? evt.text + '　' : '') + (kind === 'event' ? '' : 'えらんだら、マップで次の道をえらぼう。') + (kind === 'event' ? '' : guest ? '　カードをタップすると、ホストに「これがいい！」と提案できます（決めるのはホスト）' : online ? '　サポーターの提案には「P2のおすすめ」がつきます。えらんでいるカードは相手の画面にも見えます' : '');
   const row = $('#rewardRow'); row.innerHTML = ''; row.classList.toggle('watch', guest);
@@ -226,16 +228,17 @@ function showReward() {
   }
   run.choices.forEach((r, ci) => {
     const b = document.createElement('button');
-    const isCard = r.type === 'card', isUp = r.type === 'up', isRup = r.type === 'rup', bo = (r.type === 'boost' || isRup) && BOOSTS[r.id];
-    b.className = 'rw-pick ' + (isCard ? 'card' : isUp ? 'up' : isRup ? 'runner rup' : bo.who);
+    const isCard = r.type === 'card', isUp = r.type === 'up', isRup = r.type === 'rup', isHeal = r.type === 'heal', bo = (r.type === 'boost' || isRup) && BOOSTS[r.id];
+    b.className = 'rw-pick ' + (isHeal ? 'runner heal' : isCard ? 'card' : isUp ? 'up' : isRup ? 'runner rup' : bo.who);
     let desc;
-    if (isCard) desc = CARD[r.id].desc;
+    if (isHeal) { const m = runMaxHp(run), now = runHpNow(run), nx = Math.min(m, Math.round(now + m * r.pct)); desc = now >= m ? `HPを最大HPの${Math.round(r.pct * 100)}%回復（いまは満タン）` : `HPを最大HPの${Math.round(r.pct * 100)}%回復：HP ${now} → <b>${nx}</b> / ${m}`; }
+    else if (isCard) desc = CARD[r.id].desc;
     else if (isUp) { const u = CARD_UP[r.id], a = r.lv - 1; desc = `コスト ${u.cost[a]} → <b>${u.cost[r.lv]}</b>／${u.f(u.v[a], a)} → <b>${u.f(u.v[r.lv], r.lv)}</b>`; }
     else if (isRup) { const u = RUN_UP[r.id], a = r.lv - 1; desc = `${u.f(u.v[a], a)} → <b>${u.f(u.v[r.lv], r.lv)}</b>`; }
     else desc = bo.desc + (run.boosts[r.id] ? `（いま ${run.boosts[r.id]} → ${run.boosts[r.id] + 1}）` : '');
-    b.innerHTML = `<span class="rw-kind">${isCard ? 'サポーターのカード' : isUp ? 'カードのアップグレード' : isRup ? 'ランナーのアップグレード' : bo.who === 'runner' ? 'ランナーの強化' : 'サポーターの強化'}</span>
-      ${isCard || isUp ? '<canvas width="208" height="128"></canvas>' : `<span class="rw-mark">${bo.mark}</span>`}
-      <span class="rw-name hand">${isUp ? `${CARD[r.id].name} <b class="tlv">${stars(r.lv)}</b>` : isRup ? `${BOOSTS[r.id].name} <b class="tlv">${stars(r.lv - 1)}</b>` : rewardName(r)}</span>
+    b.innerHTML = `<span class="rw-kind">${isHeal ? 'ひと休み' : isCard ? 'サポーターのカード' : isUp ? 'カードのアップグレード' : isRup ? 'ランナーのアップグレード' : bo.who === 'runner' ? 'ランナーの強化' : 'サポーターの強化'}</span>
+      ${isCard || isUp ? '<canvas width="208" height="128"></canvas>' : `<span class="rw-mark">${isHeal ? '♥' : bo.mark}</span>`}
+      <span class="rw-name hand">${isHeal ? '休む' : isUp ? `${CARD[r.id].name} <b class="tlv">${stars(r.lv)}</b>` : isRup ? `${BOOSTS[r.id].name} <b class="tlv">${stars(r.lv - 1)}</b>` : rewardName(r)}</span>
       <span class="rw-desc">${desc}</span>${online ? '<span class="rw-badges"><i class="p1">P1</i><i class="p2">P2のおすすめ</i></span>' : ''}`;
     if (isCard || isUp) iconCanvas(b.querySelector('canvas'), r.id, 104, 64);
     if (!guest) {
@@ -245,7 +248,7 @@ function showReward() {
     } else b.addEventListener('click', () => rewardSuggest(ci)); // ゲスト：タップで提案
     row.appendChild(b);
   });
-  $('#rewardHave').innerHTML = `<div><b>サポーターのカード（${run.deck.length}枚）</b><div class="rw-deck">${deckIconsHtml(run.deck, run.ups)}</div></div><div><b>強化</b><div class="rw-boosts">${boostSummary(run)}${curseSummary(run)}</div></div>`;
+  $('#rewardHave').innerHTML = `<div><b>サポーターのカード（${run.deck.length}枚）</b><div class="rw-deck">${deckIconsHtml(run.deck, run.ups)}</div></div><div><b>強化</b><div class="rw-boosts">${hpChip(run)}${boostSummary(run)}${curseSummary(run)}</div></div>`;
   drawDeckIcons($('#rewardHave'));
   show('scr-reward');
   markReward();
