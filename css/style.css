@@ -876,9 +876,9 @@ body.mobile.land .ev-opt small{font-size:10.5px}
 .rw-chip.hp{background:#dff3e4;border-color:#2a9d5c;color:#1f6e40}
 .rw-chip.hp.mid{background:#fff1cc;border-color:#c08a00;color:#7a5600}
 .rw-chip.hp.low{background:#ffdde3;border-color:#d1293f;color:#a3122a}
-.ev-art{width:240px;height:150px;border:2px solid var(--ink);border-radius:10px;box-shadow:3px 3px 0 var(--shade);background:#f7f9fc}
+.ev-art{width:240px;height:150px;border-radius:12px;background:#f7f9fc}
 body.mobile.land .ev-art{width:176px;height:110px}
-.rw-event canvas.ev-art{width:320px;height:200px;max-width:100%;border-radius:10px}
+.rw-event canvas.ev-art{width:320px;height:200px;max-width:100%;border:0;border-radius:12px}
 body.mobile.land .rw-event canvas.ev-art{width:176px;height:110px}
 .rw-event.mini .mini-cv{width:480px;height:300px;max-width:100%;border:2px solid var(--ink);border-radius:10px;touch-action:none;background:#f7f9fc}
 body.mobile.land .rw-event.mini .mini-cv{width:300px;height:188px}
