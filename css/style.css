@@ -970,3 +970,43 @@ body.mobile.land #scr-minidbg .mdbg-side .mdbg-pick{gap:3px}
 body.mobile.land #scr-minidbg .mdbg-side .mdbg-pick .btn{padding:3px 2px;font-size:10px}
 body.mobile.land #scr-minidbg .mdbg-desc{display:none}
 body.mobile.land #scr-minidbg .mdbg-stage .mini-cv{width:min(calc(100% - 220px),calc((var(--appH) - 70px) * 1.6))}
+/* ふしぎのマス・れんしゅう画面：枠線なし、スクロールせずに1画面に収める */
+body.ev-wide{min-height:0}
+body.ev-wide #app{height:var(--appH);padding-bottom:10px;display:flex;flex-direction:column;overflow:hidden}
+body.ev-wide #app>.topbar{flex:none}
+body.ev-wide .screen.active{flex:1 1 auto;min-height:0;display:flex;flex-direction:column}
+body.ev-wide .screen.active>.screen-head{flex:none;margin-bottom:6px}
+body.ev-wide .screen.active>.screen-head p:empty{display:none}
+#scr-reward.ev-mode .reward-row{flex:1 1 auto;min-height:0;margin:0 0 8px;display:block}
+#scr-reward.ev-mode .rw-event.ev-big{height:100%;container-type:size;border:0;box-shadow:none;background:none;padding:0;border-radius:0;gap:26px}
+#scr-reward.ev-mode .rw-event canvas.ev-art{width:min(calc(100cqw - 400px),calc(100cqh * 1.6))}
+#scr-reward.ev-mode .ev-side{max-height:100%;overflow-y:auto;padding:4px 6px 6px 2px}
+#scr-reward.ev-mode .reward-have{flex:none;border:0;box-shadow:none;background:rgba(255,255,255,.7);border-radius:12px;padding:8px 14px}
+#scr-reward.ev-mode .rw-event.mini .mini-cv{border:0}
+@media (max-width:980px){
+  #scr-reward.ev-mode .rw-event canvas.ev-art{width:min(100cqw,calc((100cqh - 230px) * 1.6))}
+}
+body.mobile.land #scr-reward.ev-mode .rw-event.ev-big{gap:14px}
+body.mobile.land #scr-reward.ev-mode .rw-event canvas.ev-art{width:min(calc(100cqw - 236px),calc(100cqh * 1.6))}
+body.mobile.land #scr-reward.ev-mode .reward-have{grid-template-columns:1fr;padding:3px 10px;margin:0}
+body.mobile.land #scr-reward.ev-mode .reward-have>div:first-child{display:none}
+body.mobile.land #scr-reward.ev-mode .reward-have b{display:none}
+body.mobile.land #scr-reward.ev-mode .reward-row{margin-bottom:4px}
+#scr-minidbg .mdbg-stage{flex:1 1 auto;min-height:0;container-type:size;border:0;box-shadow:none;background:none;padding:0;margin:0;border-radius:0}
+#scr-minidbg .mdbg-stage .mini-cv{border:0;border-radius:12px;width:min(calc(100cqw - 290px),calc(100cqh * 1.6))}
+#scr-minidbg .mdbg-side{max-height:100%;overflow-y:auto;padding:4px}
+body.mobile.land #scr-minidbg .mdbg-stage .mini-cv{width:min(calc(100cqw - 222px),calc(100cqh * 1.6))}
+#scr-reward.ev-mode .reward-have{margin:0;width:100%;max-width:none}
+body.mobile.land.ev-wide .screen.active>.screen-head h2{font-size:18px;margin:0}
+body.mobile.land #scr-reward.ev-mode .ev-side{gap:5px}
+body.mobile.land #scr-reward.ev-mode .ev-text{font-size:12px;line-height:1.4}
+body.mobile.land #scr-reward.ev-mode .ev-opts{gap:5px}
+body.mobile.land #scr-reward.ev-mode .ev-opt{padding:4px 9px;gap:1px}
+body.mobile.land #scr-reward.ev-mode .ev-opt b{font-size:13.5px}
+body.mobile.land #scr-reward.ev-mode .ev-opt small{font-size:10px;line-height:1.35}
+@container (max-height:200px){
+  body.mobile.land #scr-reward.ev-mode .ev-text{font-size:11px;line-height:1.35}
+  body.mobile.land #scr-reward.ev-mode .ev-opt{padding:3px 8px}
+  body.mobile.land #scr-reward.ev-mode .ev-opt b{font-size:12.5px}
+  body.mobile.land #scr-reward.ev-mode .ev-opt small{font-size:9.5px;line-height:1.3}
+}
