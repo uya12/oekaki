@@ -10,7 +10,7 @@ const dbg = k => DBG.on && DBG[k];
 function refreshDebugUI() {
   const b = $('#btnDebug'); b.textContent = DBG.on ? 'デバッグ ON' : 'デバッグ OFF'; b.classList.toggle('on', DBG.on); b.setAttribute('aria-pressed', String(DBG.on));
   $('#dbgPanel').hidden = !(DBG.on && DBG.panel);
-  ['#btnDbgUnlock', '#btnDbgMedal', '#btnDbgReset'].forEach(id => { $(id).hidden = !DBG.on; });
+  ['#btnDbgUnlock', '#btnDbgMedal', '#btnDbgReset', '#btnDbgMini'].forEach(id => { $(id).hidden = !DBG.on; });
   $$('#dbgPanel [data-dbg]').forEach(cb => { cb.checked = !!DBG[cb.dataset.dbg]; });
   $$('#dbgPanel [data-speed]').forEach(x => x.classList.toggle('on', +x.dataset.speed === DBG.speed));
   const boss = $('#dbgPanel [data-act="boss"]'); if (boss) boss.disabled = !bossInfo;

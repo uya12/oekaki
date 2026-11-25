@@ -883,3 +883,26 @@ body.mobile.land .rw-event canvas.ev-art{width:176px;height:110px}
 .rw-event.mini .mini-cv{width:480px;height:300px;max-width:100%;border:2px solid var(--ink);border-radius:10px;touch-action:none;background:#f7f9fc}
 body.mobile.land .rw-event.mini .mini-cv{width:300px;height:188px}
 body.mobile.land .rw-event.mini{padding:6px}
+
+/* デバッグ：ミニゲームのれんしゅう */
+body.ingame #btnDbgMini{display:none}
+.dbg-tag{font-size:13px;font-family:inherit;background:var(--hilite);border:1.5px solid var(--ink);border-radius:8px;padding:1px 8px;vertical-align:middle}
+.mdbg-pick{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:0 auto 12px;max-width:760px}
+.mdbg-pick .btn.on{background:var(--hilite)}
+.mdbg-stage{display:flex;flex-direction:column;align-items:center;gap:8px;width:min(540px,100%);margin:0 auto;padding:14px}
+.mdbg-stage .mini-cv{width:480px;height:300px;max-width:100%;border:2px solid var(--ink);border-radius:10px;touch-action:none;background:#f7f9fc}
+.mdbg-desc{margin:0;font-size:13px;color:var(--ink-soft);text-align:center}
+.mdbg-res{margin:0;min-height:1.4em;font-weight:900;font-size:18px}
+.mdbg-res.t2{color:#e0a100}.mdbg-res.t1{color:#2a9d5c}.mdbg-res.t0{color:#d1293f}
+.mdbg-btns{display:flex;gap:10px}
+body.mobile.land .mdbg-stage .mini-cv{width:300px;height:188px}
+body.mobile.land #scr-minidbg .screen-head p{display:none}
+.mdbg-side{display:flex;flex-direction:column;align-items:center;gap:8px}
+.mdbg-ptr{border-color:#2a5bd7;color:#2a5bd7}.mdbg-ptr.p1{border-color:#e8305f;color:#e8305f}
+body.mobile.land #scr-minidbg .screen-head{margin-bottom:4px}
+body.mobile.land .mdbg-pick{gap:4px;margin-bottom:6px}
+body.mobile.land .mdbg-pick .btn{font-size:11px;padding:3px 8px}
+body.mobile.land .mdbg-stage{flex-direction:row;align-items:center;width:auto;max-width:100%;padding:8px;gap:10px}
+body.mobile.land .mdbg-side{width:190px;gap:5px}
+body.mobile.land .mdbg-desc{font-size:10px}
+body.mobile.land .mdbg-res{font-size:14px}

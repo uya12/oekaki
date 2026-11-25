@@ -272,14 +272,14 @@ const MG = {
 };
 
 /* ---------- ホスト（ひとりで遊ぶときも）：ゲームを動かす ---------- */
-function startMini(kind, cv, done) {
+function startMini(kind, cv, done, opt = {}) { // opt.screen：遊ぶ画面（ふつうはごほうび画面）／opt.offline：1台で遊ぶ
   if (miniStop) miniStop();
-  const G = MG[kind], x = cv.getContext('2d'), online = rewardOnline();
+  const G = MG[kind], x = cv.getContext('2d'), online = !opt.offline && rewardOnline(), scr = opt.screen || 'scr-reward';
   const S = miniS = G.init(); S.online = online;
   const C = miniCtl = { 1: mgNewCtl(), 2: mgNewCtl() };
   let alive = true, raf = 0, last = performance.now(), sent = 0;
   const toCanvas = e => { const r = cv.getBoundingClientRect(); return [(e.clientX - r.left) / r.width * MG_W, (e.clientY - r.top) / r.height * MG_H]; };
-  const me = () => C[online ? 1 : 2]; // この画面の指・マウスは、オンラインなら P1、ひとりなら P2
+  const me = () => C[online ? 1 : opt.ptr ? opt.ptr() : 2]; // この画面の指・マウスは、オンラインなら P1、ひとりなら P2（れんしゅうでは切りかえられる）
   const onDown = e => { e.preventDefault(); const q = toCanvas(e), c = me(); c.x = q[0]; c.press = true; c.pick = q; };
   const onMove = e => { me().x = toCanvas(e)[0]; };
   const onKey = e => {
@@ -294,7 +294,7 @@ function startMini(kind, cv, done) {
   miniStop = stop;
   const send = () => { if (online) netSend({ t: 'mg', k: kind, s: S }); };
   const loop = () => {
-    if (!alive) return; if (curScreen !== 'scr-reward') { stop(); return; } raf = requestAnimationFrame(loop); // 画面が変わったら止める
+    if (!alive) return; if (curScreen !== scr) { stop(); return; } raf = requestAnimationFrame(loop); // 画面が変わったら止める
     const tm = performance.now(), dt = Math.min(50, tm - last); last = tm;
     G.update(S, dt, C);
     for (const k of [1, 2]) { C[k].press = false; C[k].pick = null; C[k].step = 0; }
@@ -326,3 +326,37 @@ function startMiniView(kind, cv) {
   raf = requestAnimationFrame(loop);
 }
 function miniGuestState(m) { if (miniView && miniView.kind === m.k) miniView.S = m.s; }
+
+/* ---------- デバッグ：ミニゲームのれんしゅう画面 ---------- */
+const MDBG = { kind: 'target', back: 'scr-title', ptr: 2 };
+const MINI_LIST = () => Object.keys(EVENTS).filter(id => EVENTS[id].mini && MG[EVENTS[id].mini]);
+function mdbgPlay(id) {
+  MDBG.kind = id; MDBG.n = (MDBG.n || 0) + 1; const E = EVENTS[id], n = MDBG.n;
+  $$('#mdbgPick .btn').forEach(b => b.classList.toggle('on', b.dataset.id === id));
+  $('#mdbgDesc').textContent = (E.opts && E.opts[0] && E.opts[0].desc) || '';
+  $('#mdbgRes').textContent = ''; $('#mdbgRes').className = 'mdbg-res';
+  SFX.init();
+  startMini(E.mini, $('#mdbgCv'), tier => {
+    if (curScreen !== 'scr-minidbg' || MDBG.n !== n) return; // とちゅうで別のゲームにしたときは出さない
+    $('#mdbgRes').textContent = `けっか：${['失敗', '成功', '大成功'][tier]}`; $('#mdbgRes').className = 'mdbg-res t' + tier;
+  }, { screen: 'scr-minidbg', offline: true, ptr: () => MDBG.ptr });
+}
+function openMiniDebug() {
+  if (curScreen === 'scr-game' || curScreen === 'scr-minidbg') return;
+  if (NET.role) { netToast('オンライン中は、れんしゅうできません', 3000); return; }
+  MDBG.back = curScreen;
+  $('#mdbgPick').innerHTML = MINI_LIST().map(id => `<button class="btn sm" data-id="${id}">${EVENTS[id].mark} ${EVENTS[id].title}</button>`).join('');
+  $$('#mdbgPick .btn').forEach(b => b.addEventListener('click', () => { b.blur(); mdbgPlay(b.dataset.id); }));
+  show('scr-minidbg'); mdbgPlay(MINI_LIST().includes(MDBG.kind) ? MDBG.kind : MINI_LIST()[0]);
+}
+$('#btnDbgMini').addEventListener('click', e => { e.currentTarget.blur(); openMiniDebug(); });
+const mdbgPtrUI = () => { $('#mdbgPtr').textContent = `マウス・タップで動かす：P${MDBG.ptr}`; $('#mdbgPtr').classList.toggle('p1', MDBG.ptr === 1); };
+$('#mdbgPtr').addEventListener('click', e => { e.currentTarget.blur(); MDBG.ptr = 3 - MDBG.ptr; mdbgPtrUI(); });
+mdbgPtrUI();
+$('#mdbgRetry').addEventListener('click', e => { e.currentTarget.blur(); mdbgPlay(MDBG.kind); });
+$('#mdbgBack').addEventListener('click', () => { // もとの画面へ（ごほうび画面は作り直す）
+  MDBG.n++; if (miniStop) miniStop();
+  const run = typeof curRun === 'function' && COOP ? curRun() : null;
+  if (MDBG.back === 'scr-reward') { if (run && run.pending) showReward(); else show('scr-story'); }
+  else show(MDBG.back);
+});

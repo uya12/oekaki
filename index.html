@@ -41,6 +41,7 @@
       <div class="score" id="scoreBox" aria-live="polite">通算 <span class="r">ランナー</span> <b id="scoreR">0</b> − <b id="scoreB">0</b> <span class="b">ビルダー</span></div>
       <button class="btn sm" id="btnInstall" hidden title="ホーム画面やデスクトップにアプリとして追加">アプリにする</button>
       <button class="btn sm" id="btnUiMode" aria-pressed="false" title="スマホ用の画面とPC用の画面を切り替え">表示：PC</button>
+      <button class="btn sm" id="btnDbgMini" hidden title="デバッグ：ミニゲームをいつでも遊べる">ミニゲーム</button>
       <button class="btn sm" id="btnDebug" aria-pressed="false" title="デバッグモード（ゲーム中はF2でパネルの表示切り替え）">デバッグ OFF</button>
       <button class="btn sm" id="btnBgm" aria-pressed="true" title="対戦中はMキーでも切り替え">BGM ON</button>
     </div>
@@ -334,6 +335,23 @@
   </section>
 
   <!-- ============ ENDING（協力ストーリーのエンディング） ============ -->
+  <!-- デバッグ：ミニゲームのれんしゅう -->
+  <section id="scr-minidbg" class="screen">
+    <div class="screen-head">
+      <h2 class="hand">ミニゲームのれんしゅう <small class="dbg-tag">デバッグ</small></h2>
+      <p>ふしぎのマスのミニゲームを、何回でも遊べます（冒険には影響しません）。マウス・タップで動かす人は切りかえられます（もう片方はキーボード）。</p>
+    </div>
+    <div class="mdbg-pick" id="mdbgPick"></div>
+    <div class="panel mdbg-stage">
+      <canvas class="mini-cv" id="mdbgCv" width="480" height="300"></canvas>
+      <div class="mdbg-side">
+        <p class="mdbg-desc" id="mdbgDesc"></p>
+        <p class="mdbg-res" id="mdbgRes" aria-live="polite"></p>
+        <button class="btn sm mdbg-ptr" id="mdbgPtr" title="マウス・タップでどちらを動かすか（もう片方はキーボード）"></button>
+        <div class="mdbg-btns"><button class="btn primary" id="mdbgRetry">もう一度</button><button class="btn" id="mdbgBack">もどる</button></div>
+      </div>
+    </div>
+  </section>
   <section id="scr-ending" class="screen">
     <div class="ending-wrap">
       <h2 class="hand">ノートに平和がもどった！</h2>
