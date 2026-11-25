@@ -32,6 +32,7 @@ const EV = {
     if (c.energy0) { cu.energy0 = true; out.push('エネルギーが0から'); }
     return `のろい（次のステージだけ）：${out.join('・')}`;
   },
+  heal(run, pct) { const h = healRun(run, runMaxHp(run) * pct); return h > 0 ? `HPが ${h} 回復した` : null; }, // 満タンなら null
   maxHpDown(run, n) { run.maxHpDown = Math.min(60, (run.maxHpDown || 0) + n); return `ランナーの最大HPがずっと ${n} へった`; }
 };
 const evLines = (...a) => a.filter(Boolean).map(t => /[。！？」]$/.test(t) ? t : t + '。').join('');
@@ -40,7 +41,7 @@ const EVENTS = {
   // ---- いいことだけ ----
   inkpool: { title: 'ふしぎなインクだまり', mark: '💧', good: 1, cond: r => EV.newCards(r).length, text: 'インクの中から、何か出てきた！', act: r => ({ text: evLines(EV.addCard(r)) }) },
   sharpener: { title: 'えんぴつけずり', mark: '✎', good: 1, cond: r => EV.upCards(r).length, text: '道ばたのえんぴつけずりで、カードをとがらせた！', act: r => ({ text: evLines(EV.upCard(r)) }) },
-  spring: { title: 'げんきの泉', mark: '♥', good: 1, cond: r => EV.boostable(r).length, text: '泉の水を飲んだ！', act: r => ({ text: evLines(`HPが ${healRun(r, runMaxHp(r) * 0.3)} 回復した`, EV.addBoost(r)) }) },
+  spring: { title: 'げんきの泉', mark: '♥', good: 1, cond: r => EV.boostable(r).length, text: '泉の水を飲んだ！', act: r => ({ text: evLines(EV.heal(r, 0.3), EV.addBoost(r)) }) },
   dropped: { title: '大王の落とし物', mark: '宝', good: 1, text: '消しゴム大王が、たからばこを落としていった。ごほうびを2枚えらべる！', act: () => ({ text: 'ごほうびを2枚えらぼう。', treasure: 2 }) },
   // ---- えらぶ（リスクとごほうび） ----
   vending: { title: 'あやしい自動はんばいき', mark: '¥', text: '「HPとひきかえに、カードを売ります」と書いてある…',
@@ -71,6 +72,16 @@ const EVENTS = {
       ? ({ text: evLines('勝った！', EV.addBoost(r) || EV.upCard(r), EV.addBoost(r) || EV.upCard(r)) })
       : ({ text: evLines('負けてしまった…', EV.curse(r, { hp: 0.5 })) }) },
       { label: 'にげる', desc: '何もしない', act: () => ({ text: '鏡に布をかけて、にげた。' }) }] },
+  // ---- ミニゲーム（あそんだ結果で、ごほうびが変わる。tier：2 大成功 / 1 成功 / 0 失敗） ----
+  target: { title: 'えんぴつのまと', mark: '◎', mini: 'target', text: '的あてのえんぴつがゆれている。「真ん中で止められたら、カードをとがらせてあげよう」',
+    opts: [{ label: 'あそぶ', desc: '3回のうち、真ん中で止めるほどいい。大成功：アップグレード2つ／成功：1つ', act: () => ({ play: 'target' }) }, { label: 'やめておく', desc: '何もしない', act: () => ({ text: '的あてはやめておいた。' }) }],
+    result: (r, t) => t === 2 ? ({ text: evLines('大成功！', EV.upCard(r) || EV.addBoost(r), EV.upCard(r) || EV.addBoost(r)) }) : t === 1 ? ({ text: evLines('成功！', EV.upCard(r) || EV.addBoost(r)) }) : ({ text: 'ざんねん…何ももらえなかった。' }) },
+  catch: { title: 'ハートキャッチ', mark: '♥', mini: 'catch', text: '空からハートとカードがふってくる！ かごで受け止めよう。',
+    opts: [{ label: 'あそぶ', desc: '12秒のあいだに受け止める。大成功：ごほうび2枚＋HP回復／成功：HP回復', act: () => ({ play: 'catch' }) }, { label: 'やめておく', desc: '何もしない', act: () => ({ text: 'ぬれないように、木のかげで待った。' }) }],
+    result: (r, t) => t === 2 ? ({ text: evLines('大成功！', EV.heal(r, 0.2)) + ' ごほうびを2枚えらぼう。', treasure: 2 }) : t === 1 ? ({ text: evLines('成功！', EV.heal(r, 0.3) || EV.upCard(r) || EV.addBoost(r)) }) : ({ text: 'ざんねん…あまり受け止められなかった。' }) },
+  cups: { title: '大王のカップあて', mark: '?', mini: 'cups', text: '消しゴム大王「ケシシ…星の入ったカップを当てられるかな？ はずれたら、のろいをかけてやる！」',
+    opts: [{ label: '勝負する', desc: '当たり：ごほうび2枚／はずれ：のろい（次のステージ、はじめにHPが最大HPの25%へる）', act: () => ({ play: 'cups' }) }, { label: 'ことわる', desc: '何もしない', act: () => ({ text: '「つまらんのう」と大王は去っていった。' }) }],
+    result: (r, t) => t ? ({ text: '当たり！ 大王はくやしそうだ。ごほうびを2枚えらぼう。', treasure: 2 }) : ({ text: evLines('はずれ…大王に笑われた', EV.curse(r, { hp: 0.25 })) }) },
   // ---- 悪いことしか起きない（えらべるのは、どちらの悪いことにするか） ----
   swamp: { title: 'インクの沼', mark: '〰', text: '道がインクの沼でふさがれている！ どうやって進む？',
     opts: [{ label: '泳いでわたる', desc: 'のろい：次のステージ、はじめのHPが40%へる', act: r => ({ text: evLines('インクまみれになった', EV.curse(r, { hp: 0.4 })) }) },
@@ -84,8 +95,9 @@ const EVENTS = {
 // ふしぎのマスに入ったとき：イベントを1つえらぶ（いいこと・えらぶ・悪いこと が、だいたい 3：5：2）
 function runEvent(run) {
   const ok = Object.keys(EVENTS).filter(id => !EVENTS[id].cond || EVENTS[id].cond(run));
-  const good = ok.filter(id => EVENTS[id].good), bad = ok.filter(id => ['swamp', 'trap', 'thief'].includes(id)), choice = ok.filter(id => !good.includes(id) && !bad.includes(id));
-  const q = Math.random(), pool = q < 0.3 ? good : q < 0.8 ? choice : bad;
+  const good = ok.filter(id => EVENTS[id].good), bad = ok.filter(id => ['swamp', 'trap', 'thief'].includes(id)), mini = ok.filter(id => EVENTS[id].mini);
+  const choice = ok.filter(id => !good.includes(id) && !bad.includes(id) && !mini.includes(id));
+  const q = Math.random(), pool = q < 0.25 ? good : q < 0.45 ? mini : q < 0.82 ? choice : bad;
   const id = pickOne(pool.length ? pool : ok), E = EVENTS[id];
   if (!E.opts) { const res = E.act(run); return { id, title: E.title, mark: E.mark, text: E.text + ' ' + res.text, done: true, treasure: res.treasure, card: res.card }; }
   return { id, title: E.title, mark: E.mark, text: E.text, opts: E.opts.map(o => ({ label: o.label, desc: o.desc })) };
@@ -94,7 +106,15 @@ function runEvent(run) {
 function resolveEvent(run, i) {
   const ev = run.evt, E = ev && EVENTS[ev.id]; if (!E || !E.opts || !E.opts[i] || ev.done) return null;
   const res = E.opts[i].act(run);
+  if (res.play) { run.evt = Object.assign({}, ev, { playing: res.play }); return run.evt; } // ミニゲームをあそぶ
   run.evt = { id: ev.id, title: ev.title, mark: ev.mark, text: res.text, done: true, picked: E.opts[i].label, treasure: res.treasure };
+  return run.evt;
+}
+// ミニゲームが終わったとき（tier：2 大成功 / 1 成功 / 0 失敗）
+function finishMini(run, tier) {
+  const ev = run.evt, E = ev && EVENTS[ev.id]; if (!E || !E.result || ev.done) return null;
+  const res = E.result(run, tier);
+  run.evt = { id: ev.id, title: ev.title, mark: ev.mark, text: res.text, done: true, picked: ['失敗', '成功', '大成功'][tier], treasure: res.treasure };
   return run.evt;
 }
 // のろい・最大HPダウンの表示

@@ -880,3 +880,6 @@ body.mobile.land .ev-opt small{font-size:10.5px}
 body.mobile.land .ev-art{width:176px;height:110px}
 .rw-event canvas.ev-art{width:320px;height:200px;max-width:100%;border-radius:10px}
 body.mobile.land .rw-event canvas.ev-art{width:176px;height:110px}
+.rw-event.mini .mini-cv{width:480px;height:300px;max-width:100%;border:2px solid var(--ink);border-radius:10px;touch-action:none;background:#f7f9fc}
+body.mobile.land .rw-event.mini .mini-cv{width:300px;height:188px}
+body.mobile.land .rw-event.mini{padding:6px}

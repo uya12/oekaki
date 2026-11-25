@@ -215,7 +215,13 @@ function showReward() {
     : kind === 'elite' ? `強敵をたおした！ ごほうびをえらぼう（あと${left}枚）` : `${run.stage}階 クリア！ ごほうびを1枚えらぼう`;
   $('#rewardSub').textContent = (evt && kind !== 'event' ? evt.text + '　' : '') + (kind === 'event' ? '' : 'えらんだら、マップで次の道をえらぼう。') + (kind === 'event' ? '' : guest ? '　カードをタップすると、ホストに「これがいい！」と提案できます（決めるのはホスト）' : online ? '　サポーターの提案には「P2のおすすめ」がつきます。えらんでいるカードは相手の画面にも見えます' : '');
   const row = $('#rewardRow'); row.innerHTML = ''; row.classList.toggle('watch', guest);
-  if (kind === 'event' && evt && evt.opts && !evt.done) { // ふしぎのマス：どうするかえらぶ
+  if (miniStop && !(kind === 'event' && evt && evt.playing && !evt.done)) miniStop(); // ほかの画面に変わったら、ミニゲームは止める
+  if (kind === 'event' && evt && evt.playing && !evt.done) { // ふしぎのマス：ミニゲーム
+    row.innerHTML = `<div class="rw-event mini"><canvas class="mini-cv" width="480" height="300"></canvas>${guest ? '<p class="ev-wait">ホストがミニゲーム中…</p>' : '<p class="ev-wait">マウス・タッチ（または スペース・←→キー）であそぶ</p>'}</div>`;
+    const cv = row.querySelector('.mini-cv');
+    if (guest) drawEventArt(cv.getContext('2d'), evt.id, cv.width, cv.height);
+    else startMini(evt.playing, cv, tier => { if (curRun() !== run || curScreen !== 'scr-reward') return; const res = finishMini(run, tier); if (!res) return; if (res.treasure) { run.rwKind = 'treasure'; run.extra = res.treasure - 1; run.choices = null; } saveStory(); showReward(); });
+  } else if (kind === 'event' && evt && evt.opts && !evt.done) { // ふしぎのマス：どうするかえらぶ
     row.innerHTML = `<div class="rw-event">${evArt(evt)}<p>${evt.text}</p><div class="ev-opts">${evt.opts.map((o, i) => `<button class="ev-opt${i === evt.opts.length - 1 ? ' safe' : ''}" data-i="${i}"${guest ? ' disabled' : ''}><b>${o.label}</b><small>${o.desc}</small></button>`).join('')}</div>${guest ? '<p class="ev-wait">ホストがえらんでいます…</p>' : ''}</div>`;
     if (!guest) row.querySelectorAll('.ev-opt').forEach(bt => bt.addEventListener('click', () => {
       const res = resolveEvent(run, +bt.dataset.i); if (!res) return;

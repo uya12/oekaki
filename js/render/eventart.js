@@ -144,6 +144,25 @@ function drawEventArt(ctx, id, W, H) {
       for (const [sx, sy] of [[60, 118], [70, 110], [52, 104]]) { circ(sx, sy, 2.5); x.fillStyle = '#e9e1ea'; x.fill(); }
       break;
     }
+    case 'target': { // えんぴつのまと
+      ground(); for (const [r, c] of [[44, '#fff'], [32, '#e8305f'], [20, '#fff'], [9, '#ffd23f']]) { circ(120, 74, r); fs(c, 2.4); }
+      P(120, 118, 120, 128); fs(null, 3);
+      x.save(); x.translate(174, 50 + bob); x.rotate(-0.9); P(0, -6, 60, -6, 60, 6, 0, 6); fs('#ffd84a'); P(0, -6, -14, 0, 0, 6); fs('#e9c69a'); P(60, -6, 70, -6, 70, 6, 60, 6); fs('#f2a3b3'); x.restore();
+      spark(84, 40, 6); spark(160, 108, 5); break;
+    }
+    case 'catch': { // ハートキャッチ
+      ground();
+      for (const [hx, hy, sz] of [[78, 34, 8], [140, 22, 7], [172, 58, 9]]) { x.save(); x.translate(hx, hy + bob); x.beginPath(); x.moveTo(0, sz * 0.9); x.bezierCurveTo(-sz * 1.4, -sz * 0.2, -sz * 0.6, -sz * 1.3, 0, -sz * 0.5); x.bezierCurveTo(sz * 0.6, -sz * 1.3, sz * 1.4, -sz * 0.2, 0, sz * 0.9); fs('#f27eb1', 1.8); x.restore(); }
+      card(106, 56 - bob, 0.3, '#ffe58a');
+      P(84, 98, 156, 98, 148, 126, 92, 126); x.closePath(); fs('#d9ad7c'); for (let k = -2; k <= 2; k++) { P(120 + k * 12, 100, 120 + k * 10, 124); x.strokeStyle = 'rgba(122,82,54,0.6)'; x.lineWidth = 1.5; x.stroke(); }
+      break;
+    }
+    case 'cups': { // 大王のカップあて
+      ground();
+      for (let k = 0; k < 3; k++) { const cx = 70 + k * 50, lift = k === 1 ? 18 + bob : 0; if (k === 1) spark(cx, 116, 9); P(cx - 16, 96 - lift, cx + 16, 96 - lift, cx + 21, 128 - lift, cx - 21, 128 - lift); x.closePath(); fs('#e8305f'); }
+      rr(186, 30, 44, 26, 5); fs('#fbe6ee', 2.2); x.fillStyle = '#5b8def'; x.fillRect(186, 30, 13, 26); x.fillStyle = INK; circ(209, 41, 2.2); x.fill(); circ(219, 41, 2.2); x.fill();
+      x.font = '900 20px sans-serif'; x.textAlign = 'center'; x.fillText('?', 120, 70 + bob); break;
+    }
     default: x.fillStyle = INK; x.font = '900 40px sans-serif'; x.textAlign = 'center'; x.fillText('？', 120, 90);
   }
   x.restore();
