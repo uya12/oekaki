@@ -132,7 +132,7 @@ function rollUpgrades(run) {
   const shuffle = a => { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
   const ups = run.deck.filter(id => CARD_UP[id] && ((run.ups || {})[id] || 0) < UP_MAX).map(id => ({ type: 'up', id, lv: ((run.ups || {})[id] || 0) + 1 }));
   const rups = Object.keys(RUN_UP).filter(k => run.boosts[k] && run.boosts[k] < 3).map(k => ({ type: 'rup', id: k, lv: Math.min(3, run.boosts[k]) + 1 }));
-  return [{ type: 'heal', pct: 0.4 }].concat(shuffle(ups.concat(rups)).slice(0, 2)); // 休む（HP回復）＋アップグレード2つ
+  return [{ type: 'heal', pct: 0.3 }].concat(shuffle(ups.concat(rups)).slice(0, 2)); // 休む（HP回復）＋アップグレード2つ
 }
 
 // 記録（ランク・メダル）を残す場所：ステージごと。強敵は別の記録（ステージ番号 + 100）。EX は EX_IDX
