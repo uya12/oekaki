@@ -831,3 +831,30 @@ body.mobile.land #scr-story .story-intro{order:2}
 body.mobile.land #scr-story .page-card.ex{order:3;margin-top:8px}
 .si-theme{font-weight:700;color:#8a5a00;margin:4px 0}
 body.mobile.land #scr-story .si-theme{font-size:11.5px;margin:2px 0}
+/* スマホ：結果の画面はボタンを下にくっつけて、いつでも見えるように（中身はスクロール）。見出しなどは小さめに */
+body.mobile .result-card{padding:10px 14px 0;position:relative}
+body.mobile .result-card h2{font-size:clamp(20px,calc(var(--appW) * .04),34px)}
+body.mobile .result-reason{margin:2px 0 6px;font-size:12.5px}
+body.mobile .result-match{margin:0 0 6px;font-size:12.5px}
+body.mobile .result-match b{font-size:16px}
+body.mobile .result-cols{font-size:11.5px;gap:6px}
+body.mobile .result-cols div{padding:5px 8px}
+body.mobile .result-cols h4{font-size:12px}
+body.mobile .res-medals{margin-top:4px;transform:scale(.7);transform-origin:top center;margin-bottom:-24px}
+body.mobile .result-btns{position:sticky;bottom:0;background:var(--surface);margin:8px -14px 0;padding:8px 10px 10px;gap:6px;border-top:1.5px dashed var(--line,#c9d2df)}
+body.mobile .result-btns .btn{padding:6px 12px;font-size:13px}
+/* スマホ：エンディングは画面に収まるように小さく、ボタンを先に */
+body.mobile .ending-wrap{display:flex;flex-direction:column;margin-top:4px}
+body.mobile .ending-wrap h2{order:0;font-size:clamp(24px,calc(var(--appW) * .05),44px)}
+body.mobile .ending-wrap .vic-btns{order:1;margin:4px 0 6px}
+body.mobile .ending-wrap>*:not(h2):not(.vic-btns){order:2}
+body.mobile .ending-stage{height:120px;margin-bottom:6px}
+body.mobile .ending-stage img{max-height:110px}
+body.mobile .ending-text p{font-size:13px;margin:3px 0}
+/* マップのマス：見た目は小さくても、指で押しやすいように当たりを広げる */
+.rm-in .mnode::before{content:'';position:absolute;inset:-9px;border-radius:50%}
+@media (max-height:340px){body.mobile.land .rm-in{height:92px}body.mobile.land .run-map{padding-top:14px}body.mobile.land #scr-story .si-text{display:none}}
+/* スマホ横画面：ごほうびの3枚は、せまい画面でも横に並べる */
+body.mobile.land .reward-row{grid-template-columns:repeat(3,minmax(0,1fr))}
+body.mobile.land .reward-have{grid-template-columns:1fr 1fr}
+@media (max-width:700px){body.mobile.land .rw-name{font-size:16px}body.mobile.land .rw-desc{font-size:11px}body.mobile.land .rw-pick canvas{width:72px;height:44px}body.mobile.land .rw-mark{width:40px;height:40px;font-size:20px}}
