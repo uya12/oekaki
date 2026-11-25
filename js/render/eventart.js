@@ -163,6 +163,23 @@ function drawEventArt(ctx, id, W, H) {
       rr(186, 30, 44, 26, 5); fs('#fbe6ee', 2.2); x.fillStyle = '#5b8def'; x.fillRect(186, 30, 13, 26); x.fillStyle = INK; circ(209, 41, 2.2); x.fill(); circ(219, 41, 2.2); x.fill();
       x.font = '900 20px sans-serif'; x.textAlign = 'center'; x.fillText('?', 120, 70 + bob); break;
     }
+    case 'taiko': { // インクだいこ
+      ground(); ell(120, 96, 46, 14); fs('#c99a68'); x.beginPath(); x.moveTo(74, 96); x.lineTo(78, 124); x.quadraticCurveTo(120, 136, 162, 124); x.lineTo(166, 96); fs('#e8305f'); ell(120, 96, 46, 14); fs('#fff4dc');
+      for (const [sx, a, c] of [[70, -0.6, '#e8305f'], [170, 0.6, '#2a5bd7']]) { x.save(); x.translate(sx, 62 + bob); x.rotate(a); rr(-4, -30, 8, 40, 4); fs('#d9ad7c', 2); circ(0, -32, 7); fs(c, 2); x.restore(); }
+      x.fillStyle = INK; x.font = '900 18px sans-serif'; x.textAlign = 'center'; x.fillText('♪', 34, 40 + bob); x.fillText('♫', 210, 36 - bob); break;
+    }
+    case 'guard': { // たからをまもれ
+      ground(); rr(102, 104, 36, 24, 4); fs('#d9ad7c'); rr(116, 110, 8, 8, 2); fs('#ffd23f', 1.5);
+      for (const [px, c] of [[84, '#ffd8e2'], [156, '#cfe0ff']]) { rr(px - 22, 80, 44, 9, 4); fs(c, 2.4); }
+      for (const [sx, sy] of [[60, 30], [120, 20], [188, 40]]) { x.beginPath(); for (let k = 0; k < 7; k++) { const a = k / 7 * Math.PI * 2, r = 6 + (k % 2) * 3; x.lineTo(sx + Math.cos(a) * r, sy + bob + Math.sin(a) * r); } x.closePath(); fs('#9aa3b5', 1.8); }
+      rr(196, 8, 38, 22, 5); fs('#fbe6ee', 2); x.fillStyle = '#5b8def'; x.fillRect(196, 8, 11, 22); break;
+    }
+    case 'simon': { // おぼえて！大王のまね
+      ground(); const cs = ['#e8305f', '#f2a65a', '#2a5bd7', '#33b06a'];
+      cs.forEach((c, i) => { circ(48 + i * 48, 96, 18); fs(i === Math.floor(t / 30) % 4 ? c : '#fff', 3); x.strokeStyle = c; x.lineWidth = 4; circ(48 + i * 48, 96, 18); x.stroke(); });
+      rr(98, 26, 44, 26, 6); fs('#fbe6ee', 2.2); x.fillStyle = '#5b8def'; x.fillRect(98, 26, 13, 26); x.fillStyle = INK; circ(122, 38, 2.3); x.fill(); circ(132, 38, 2.3); x.fill();
+      x.font = '900 16px sans-serif'; x.textAlign = 'center'; x.fillText('?', 156, 34 + bob); break;
+    }
     default: x.fillStyle = INK; x.font = '900 40px sans-serif'; x.textAlign = 'center'; x.fillText('？', 120, 90);
   }
   x.restore();

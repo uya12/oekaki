@@ -6,6 +6,7 @@
    - P2（サポーター・青）：PCはマウス。オンラインではゲストのタップ
    - ホストがゲームを動かし、ゲストには 60ms ごとにようすを送る（ゲストは操作をホストへ送る）
    - target：えんぴつのまと  catch：ハートキャッチ  cups：大王のカップあて
+   - taiko：インクだいこ  guard：たからをまもれ  simon：おぼえて！大王のまね
    結果は tier：2 = 大成功 / 1 = 成功 / 0 = 失敗
    ===================================================== */
 const MG_W = 480, MG_H = 300, MG_INK = '#24252b', P1C = '#e8305f', P2C = '#2a5bd7';
@@ -159,6 +160,113 @@ const MG = {
       }
       x.fillStyle = '#c9d2df'; x.fillRect(0, CY + 36, MG_W, 4);
       mgLegend(x, S, 'A・Dでえらんで W で決定', 'クリックでえらぶ');
+    }
+  },
+  /* ---- インクだいこ：P1は赤の列、P2は青の列のノーツをたたく。金のノーツは2人同時に（約20秒） ---- */
+  taiko: {
+    init() {
+      const notes = []; let tt = 1600, gap = 650;
+      for (let k = 0; k < 34; k++) { const q = Math.random(); notes.push({ t: Math.round(tt), l: q < 0.2 ? 2 : q < 0.6 ? 0 : 1, h: [0, 0], miss: 0 }); tt += gap * (0.6 + Math.random() * 0.6); gap = Math.max(300, gap - 12); }
+      return { t: 0, notes, hit: 0, need: notes.reduce((s, n) => s + (n.l === 2 ? 2 : 1), 0), pops: [], over: false, tier: 0, end: notes[notes.length - 1].t + 900 };
+    },
+    TRAVEL: 1150, LINE: 226,
+    update(S, dt, C) {
+      S.t += dt;
+      for (const w of [0, 1]) if (C[w + 1].press) { // たたいた：いちばん近いノーツ
+        let best = null, bd = 1e9;
+        for (const n of S.notes) { if ((n.l !== w && n.l !== 2) || n.h[w] || n.miss) continue; const d = Math.abs(S.t - n.t); if (d < bd) { bd = d; best = n; } }
+        if (best && bd <= 75) { best.h[w] = 1; S.hit++; S.pops.push({ x: w ? 310 : 170, s: bd <= 30 ? 'ぴったり' : 'よし', c: bd <= 30 ? '#e0a100' : '#2a9d5c', t: S.t }); SFX.pick(); }
+        else { S.hit = Math.max(0, S.hit - 1); S.pops.push({ x: w ? 310 : 170, s: 'からうち −1', c: '#d1293f', t: S.t }); } // れんだはできない
+      }
+      for (const n of S.notes) if (!n.miss && S.t > n.t + 120) { const need = n.l === 2 ? [0, 1] : [n.l]; if (need.some(w => !n.h[w])) { n.miss = 1; for (const w of need) if (!n.h[w]) S.pops.push({ x: w ? 310 : 170, s: n.l === 2 ? 'そろえて！' : 'ミス', c: '#d1293f', t: S.t }); } }
+      S.pops = S.pops.filter((p, i) => S.t - p.t < 600 && !S.pops.some((q, j) => j > i && q.x === p.x)); // 列ごとに、いちばん新しい表示だけ
+      if (S.t > S.end) { S.over = true; const r = S.hit / S.need; S.tier = r >= 0.9 ? 2 : r >= 0.72 ? 1 : 0; }
+    },
+    draw(S, x) {
+      mgPaper(x); const L = MG.taiko.LINE, T = MG.taiko.TRAVEL;
+      mgText(x, 'インクだいこ', MG_W / 2, 26, 18); mgText(x, `${Math.round(S.hit / S.need * 100)}%（90%で大成功・からうちは−1）`, MG_W / 2, 50, 13, '#5b3a9a');
+      for (const [lx, col, soft] of [[170, P1C, '#ffd8e2'], [310, P2C, '#cfe0ff']]) { x.fillStyle = soft; x.fillRect(lx - 34, 40, 68, MG_H - 70); x.beginPath(); x.arc(lx, L, 24, 0, Math.PI * 2); x.strokeStyle = col; x.lineWidth = 4; x.stroke(); }
+      for (const n of S.notes) {
+        const y = L - (n.t - S.t) / T * 190; if (y < 20 || y > MG_H) continue;
+        const lanes = n.l === 2 ? [0, 1] : [n.l];
+        if (n.l === 2) { x.fillStyle = '#ffd23f'; x.fillRect(170, y - 4, 140, 8); }
+        for (const w of lanes) { if (n.h[w]) continue; x.beginPath(); x.arc(w ? 310 : 170, y, 18, 0, Math.PI * 2); x.fillStyle = n.l === 2 ? '#ffd23f' : w ? P2C : P1C; x.fill(); x.strokeStyle = MG_INK; x.lineWidth = 2.5; x.stroke(); }
+      }
+      for (const p of S.pops) mgText(x, p.s, p.x, L - 40 - (S.t - p.t) / 20, 15, p.c);
+      if (S.t < 1500) mgText(x, '線の円に来たらたたく！ 金のノーツは2人同時に', MG_W / 2, 120, 15, '#5d6170');
+      mgLegend(x, S, 'W・スペースでたたく', 'クリックでたたく');
+    }
+  },
+  /* ---- たからをまもれ：大王が投げる消しカスを、左右の盾で止める（20秒） ---- */
+  guard: {
+    init: () => ({ t: 0, dur: 20000, shots: [], pads: [{ x: 180 }, { x: 300 }], hits: 0, blocks: 0, next: 900, pops: [], over: false, tier: 0, id: 0 }),
+    PY: 150, TX: 240, TY: 262,
+    update(S, dt, C) {
+      S.t += dt; const G = MG.guard, left = S.dur - S.t;
+      S.pads.forEach((p, i) => { const c = C[i + 1]; if (c.x != null) p.x += (c.x - p.x) * Math.min(1, 0.3 * dt / 16.7); else p.x += c.dir * 0.45 * dt; p.x = i ? Math.max(245, Math.min(455, p.x)) : Math.max(25, Math.min(235, p.x)); });
+      if (S.t >= S.next && left > 800) {
+        const sx = 20 + Math.random() * 440, sy = -10, sp = (0.15 + S.t / S.dur * 0.17 + Math.random() * 0.05) * (S.t > 7000 && Math.random() < 0.3 ? 1.5 : 1), d = Math.hypot(G.TX - sx, G.TY - sy);
+        S.shots.push({ i: ++S.id, x: sx, y: sy, vx: (G.TX - sx) / d * sp, vy: (G.TY - sy) / d * sp, py: sy });
+        S.next = S.t + Math.max(230, 520 - S.t / S.dur * 300) * (0.7 + Math.random() * 0.6);
+      }
+      for (const s of S.shots) {
+        s.py = s.y; s.x += s.vx * dt; s.y += s.vy * dt;
+        if (!s.done && s.py < G.PY && s.y >= G.PY) { const w = s.x < 240 ? 0 : 1; if (Math.abs(s.x - S.pads[w].x) < 24) { s.done = 1; S.blocks++; S.pops.push({ x: s.x, y: G.PY - 14, s: 'ガード', c: w ? P2C : P1C, t: S.t }); SFX.pick(); } }
+        if (!s.done && Math.hypot(s.x - G.TX, s.y - G.TY) < 22) { s.done = 2; S.hits++; S.pops.push({ x: G.TX, y: G.TY - 30, s: 'あたった！', c: '#d1293f', t: S.t }); SFX.hurt(); }
+      }
+      S.shots = S.shots.filter(s => !s.done && s.y < MG_H + 20);
+      S.pops = S.pops.filter(p => S.t - p.t < 600);
+      if (left <= 0) { S.over = true; S.tier = S.hits <= 1 ? 2 : S.hits <= 4 ? 1 : 0; }
+    },
+    draw(S, x) {
+      mgPaper(x); const G = MG.guard;
+      mgText(x, `たからをまもれ　のこり ${Math.max(0, Math.ceil((S.dur - S.t) / 1000))}秒`, MG_W / 2, 26, 18); mgText(x, `あたった ${S.hits}回（1回までで大成功）`, MG_W / 2, 50, 13, S.hits > 1 ? '#d1293f' : '#5b3a9a');
+      x.setLineDash([4, 5]); x.strokeStyle = '#c9d2df'; x.lineWidth = 2; x.beginPath(); x.moveTo(240, G.PY - 40); x.lineTo(240, G.PY + 20); x.stroke(); x.setLineDash([]);
+      mgRR(x, G.TX - 22, G.TY - 14, 44, 28, 5); x.fillStyle = '#d9ad7c'; x.fill(); x.strokeStyle = MG_INK; x.lineWidth = 2.5; x.stroke(); x.fillStyle = '#ffd23f'; x.fillRect(G.TX - 5, G.TY - 6, 10, 10);
+      mgRR(x, 14, 8, 46, 26, 6); x.fillStyle = '#fbe6ee'; x.fill(); x.strokeStyle = MG_INK; x.lineWidth = 2; x.stroke(); x.fillStyle = '#5b8def'; x.fillRect(14, 8, 14, 26);
+      for (const s of S.shots) { x.beginPath(); for (let k = 0; k < 7; k++) { const a = k / 7 * Math.PI * 2, r = 7 + (k % 2) * 3; x.lineTo(s.x + Math.cos(a) * r, s.y + Math.sin(a) * r); } x.closePath(); x.fillStyle = '#9aa3b5'; x.fill(); x.strokeStyle = MG_INK; x.lineWidth = 1.8; x.stroke(); }
+      S.pads.forEach((p, i) => { mgRR(x, p.x - 24, G.PY - 5, 48, 10, 5); x.fillStyle = i ? '#cfe0ff' : '#ffd8e2'; x.fill(); x.strokeStyle = i ? P2C : P1C; x.lineWidth = 3; x.stroke(); mgText(x, i ? 'P2' : 'P1', p.x, G.PY + 22, 11, i ? P2C : P1C); });
+      for (const p of S.pops) mgText(x, p.s, p.x, p.y - (S.t - p.t) / 25, 13, p.c);
+      mgLegend(x, S, 'A・D／←→で左の盾', 'マウスで右の盾');
+    }
+  },
+  /* ---- おぼえて！大王のまね：光った順番をおぼえて、2人で手分けしてたたく ---- */
+  simon: {
+    init: () => ({ t: 0, seq: [Math.floor(Math.random() * 4), Math.floor(Math.random() * 4), Math.floor(Math.random() * 4)], ph: 'show', phT: 600, idx: 0, flash: -1, flashT: 0, best: 0, over: false, tier: 0, msg: '' }),
+    PX: [96, 192, 288, 384], PY: 168,
+    gap: S => Math.max(260, 470 - S.seq.length * 28),
+    update(S, dt, C) {
+      S.t += dt; const M = MG.simon;
+      if (S.ph === 'show') { // 順番に光らせる
+        const k = Math.floor((S.t - S.phT) / M.gap(S));
+        S.flash = k >= 0 && k < S.seq.length && (S.t - S.phT) % M.gap(S) < M.gap(S) * 0.7 ? S.seq[k] : -1;
+        if (k >= S.seq.length) { S.ph = 'input'; S.idx = 0; S.phT = S.t; S.flash = -1; }
+        return;
+      }
+      if (S.ph === 'wait') { if (S.t > S.phT) { S.ph = 'show'; S.phT = S.t + 300; } return; }
+      if (S.ph === 'end') { if (S.t > S.phT) S.over = true; return; }
+      const presses = [];
+      if (C[1].step) presses.push(C[1].step < 0 ? 0 : 1); // P1：A＝1つめ、D＝2つめ
+      for (const w of [1, 2]) if (C[w].pick) { const [X, Y] = C[w].pick; M.PX.forEach((px, i) => { if (Math.hypot(X - px, Y - M.PY) < 44 && (w === 1 ? i < 2 : i >= 2)) presses.push(i); }); }
+      for (const pad of presses) {
+        S.flash = pad; S.flashT = S.t;
+        if (pad === S.seq[S.idx]) {
+          SFX.pick(); S.idx++;
+          if (S.idx >= S.seq.length) { S.best = S.seq.length; if (S.seq.length >= 9) { S.ph = 'end'; S.phT = S.t + 1000; S.msg = '大成功！'; S.tier = 2; return; } S.seq.push(Math.floor(Math.random() * 4)); S.ph = 'wait'; S.phT = S.t + 700; S.msg = 'せいかい！'; return; }
+        } else { SFX.hurt(); S.ph = 'end'; S.phT = S.t + 1200; S.tier = S.best >= 6 ? 1 : 0; S.msg = `まちがい…（${S.best}こまで）`; return; }
+      }
+      if (S.t - Math.max(S.phT, S.flashT) > 4000) { S.ph = 'end'; S.phT = S.t + 1200; S.tier = S.best >= 6 ? 1 : 0; S.msg = '時間切れ…'; }
+      if (S.t - S.flashT > 220) S.flash = -1;
+    },
+    draw(S, x) {
+      mgPaper(x); const M = MG.simon, cols = ['#e8305f', '#f2a65a', '#2a5bd7', '#33b06a'];
+      mgText(x, `おぼえて！大王のまね　${S.seq.length}こ`, MG_W / 2, 26, 18); mgText(x, '9こ全部できたら大成功（6こで成功）', MG_W / 2, 50, 13, '#5b3a9a');
+      M.PX.forEach((px, i) => {
+        const on = S.flash === i; x.beginPath(); x.arc(px, M.PY, on ? 42 : 36, 0, Math.PI * 2); x.fillStyle = on ? cols[i] : '#fff'; x.fill(); x.strokeStyle = cols[i]; x.lineWidth = 6; x.stroke();
+        mgText(x, i < 2 ? (S.online ? 'P1' : ['A', 'D'][i]) : 'P2', px, M.PY + 7, 18, on ? MG_INK : cols[i]);
+      });
+      mgText(x, S.ph === 'show' ? 'よく見て…' : S.ph === 'input' ? `たたいて！（${S.idx} / ${S.seq.length}）` : S.msg, MG_W / 2, 248, 17, S.ph === 'end' && S.tier === 0 ? '#d1293f' : '#5d6170');
+      mgLegend(x, S, '左の2つ：A・D', '右の2つ：クリック');
     }
   }
 };
