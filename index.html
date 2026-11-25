@@ -94,15 +94,15 @@
         </div>
         <div class="mode-card pc-only">
           <h3 class="hand">協力ストーリー</h3>
-          <p>2人で分かれ道のマップを進み、15階の消しゴム大王をめざす協力モード。どの道を通るかを自分でえらび、カードや強化を集めてだんだん強くなっていく。ランナーは攻撃ボタンが使えないけど、敵は踏んで倒せる。サポーターのブロックと道具で、消しゴム大王のいじわるを突破しよう。</p>
+          <p>2人で分かれ道のマップを進み、15階の消しゴム大王をめざす協力モード。カードや強化を集めて、だんだん強くなろう。</p>
           <div class="lv-pick" role="group" aria-label="CPUの強さ">
             <button class="btn sm" data-lv="easy">やさしい</button><button class="btn sm on" data-lv="normal">ふつう</button><button class="btn sm" data-lv="hard">むずかしい</button>
           </div>
           <button class="btn blue big" id="btnCoop">ストーリーをはじめる</button>
         </div>
         <div class="mode-card">
-          <h3 class="hand">オンラインで遊ぶ（2台で・スマホもOK）</h3>
-          <p>協力ストーリーと対戦（フリー／先取マッチ）を、別々のパソコンやスマホで遊べます。接続コードをコピペで送り合うだけ（無料・サーバー不要）。</p>
+          <h3 class="hand">オンラインで遊ぶ</h3>
+          <p>2台のパソコンやスマホで、協力ストーリーと対戦（フリー／先取マッチ）を遊べます。接続コードをコピペで送り合うだけ（無料・サーバー不要）。</p>
           <button class="btn blue big" id="btnOnline">オンラインで遊ぶ</button>
         </div>
       </div>
@@ -118,7 +118,7 @@
       <div class="head-nav"><button class="btn sm" id="btnDrawBack" hidden>◀ 戻る</button><button class="btn sm" id="btnDrawTitle">タイトルへ</button></div>
     </div>
     <div class="draw-grid">
-      <aside class="panel">
+      <aside class="panel" data-fit>
         <div class="sect">
           <h3>色</h3>
           <div class="palette" id="palette"></div>
@@ -163,7 +163,7 @@
         <div class="under-paper">Ctrl/⌘ + Z で1つ戻す</div>
       </div>
 
-      <aside class="panel">
+      <aside class="panel" data-fit>
         <div class="sect">
           <h3>名前</h3>
           <div class="name-row"><input id="charName" maxlength="10" value="ラクガキくん" aria-label="キャラの名前"></div>
@@ -198,6 +198,7 @@
       <div class="deck-slots" id="deckSlots"></div>
       <div class="deck-side">
         <div class="deck-count"><b id="deckCount">0</b> / 8 枚　<span id="deckHint">枠をクリックで外せます</span></div>
+        <div class="deck-info" id="deckInfo">カードにマウスをのせる（タップする）と、説明が出ます</div>
         <div class="deck-btns">
           <button class="btn sm" id="btnDeckPreset">おすすめ</button>
           <button class="btn sm" id="btnDeckRandom">おまかせ</button>
@@ -321,7 +322,7 @@
       <div class="story-top-btns"><button class="btn sm" id="btnDbgUnlock" hidden>EX解放</button><button class="btn sm" id="btnDbgMedal" hidden>虹メダル全部</button><button class="btn sm" id="btnDbgReset" hidden>記録リセット</button><button class="btn sm" id="btnStoryRedraw">キャラを描き直す</button><button class="btn sm" id="btnStoryTitle">タイトルへ</button></div>
     </div>
     <div class="story-grid" id="storyGrid"></div>
-    <div class="panel story-intro" id="storyIntro"></div>
+    <div class="panel story-intro" id="storyIntro" data-fit></div>
   </section>
 
   <!-- ============ REWARD（冒険：ステージクリアのごほうびを3枚から1枚えらぶ） ============ -->
