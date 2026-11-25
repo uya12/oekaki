@@ -72,16 +72,16 @@ const EVENTS = {
       ? ({ text: evLines('勝った！', EV.addBoost(r) || EV.upCard(r), EV.addBoost(r) || EV.upCard(r)) })
       : ({ text: evLines('負けてしまった…', EV.curse(r, { hp: 0.5 })) }) },
       { label: 'にげる', desc: '何もしない', act: () => ({ text: '鏡に布をかけて、にげた。' }) }] },
-  // ---- ミニゲーム（あそんだ結果で、ごほうびが変わる。tier：2 大成功 / 1 成功 / 0 失敗） ----
-  target: { title: 'えんぴつのまと', mark: '◎', mini: 'target', text: '的あてのえんぴつがゆれている。「真ん中で止められたら、カードをとがらせてあげよう」',
-    opts: [{ label: 'あそぶ', desc: '3回のうち、真ん中で止めるほどいい。大成功：アップグレード2つ／成功：1つ', act: () => ({ play: 'target' }) }, { label: 'やめておく', desc: '何もしない', act: () => ({ text: '的あてはやめておいた。' }) }],
+  // ---- ミニゲーム（2人で協力。とても難しい。tier：2 大成功 / 1 成功 / 0 失敗） ----
+  target: { title: 'えんぴつのまと', mark: '◎', mini: 'target', text: '動く的に、2本のえんぴつ。「2人とも真ん中で止められたら、カードをとがらせてあげよう」',
+    opts: [{ label: '2人であそぶ', desc: '動く的に、P1・P2がそれぞれえんぴつを止める（3回）。大成功：アップグレード2つ／成功：1つ', act: () => ({ play: 'target' }) }, { label: 'やめておく', desc: '何もしない', act: () => ({ text: '的あてはやめておいた。' }) }],
     result: (r, t) => t === 2 ? ({ text: evLines('大成功！', EV.upCard(r) || EV.addBoost(r), EV.upCard(r) || EV.addBoost(r)) }) : t === 1 ? ({ text: evLines('成功！', EV.upCard(r) || EV.addBoost(r)) }) : ({ text: 'ざんねん…何ももらえなかった。' }) },
-  catch: { title: 'ハートキャッチ', mark: '♥', mini: 'catch', text: '空からハートとカードがふってくる！ かごで受け止めよう。',
-    opts: [{ label: 'あそぶ', desc: '12秒のあいだに受け止める。大成功：ごほうび2枚＋HP回復／成功：HP回復', act: () => ({ play: 'catch' }) }, { label: 'やめておく', desc: '何もしない', act: () => ({ text: 'ぬれないように、木のかげで待った。' }) }],
+  catch: { title: 'ハートキャッチ', mark: '♥', mini: 'catch', text: '空からハートとカードがどしゃぶり！ 2つのかごで受け止めよう。金のハートは2人のかごをそろえないと取れない。',
+    opts: [{ label: '2人であそぶ', desc: '15秒で30点めざす（消しカスは−3）。大成功：ごほうび2枚＋HP回復／成功：HP回復', act: () => ({ play: 'catch' }) }, { label: 'やめておく', desc: '何もしない', act: () => ({ text: 'ぬれないように、木のかげで待った。' }) }],
     result: (r, t) => t === 2 ? ({ text: evLines('大成功！', EV.heal(r, 0.2)) + ' ごほうびを2枚えらぼう。', treasure: 2 }) : t === 1 ? ({ text: evLines('成功！', EV.heal(r, 0.3) || EV.upCard(r) || EV.addBoost(r)) }) : ({ text: 'ざんねん…あまり受け止められなかった。' }) },
-  cups: { title: '大王のカップあて', mark: '?', mini: 'cups', text: '消しゴム大王「ケシシ…星の入ったカップを当てられるかな？ はずれたら、のろいをかけてやる！」',
-    opts: [{ label: '勝負する', desc: '当たり：ごほうび2枚／はずれ：のろい（次のステージ、はじめにHPが最大HPの25%へる）', act: () => ({ play: 'cups' }) }, { label: 'ことわる', desc: '何もしない', act: () => ({ text: '「つまらんのう」と大王は去っていった。' }) }],
-    result: (r, t) => t ? ({ text: '当たり！ 大王はくやしそうだ。ごほうびを2枚えらぼう。', treasure: 2 }) : ({ text: evLines('はずれ…大王に笑われた', EV.curse(r, { hp: 0.25 })) }) },
+  cups: { title: '大王のカップあて', mark: '?', mini: 'cups', text: '消しゴム大王「ケシシ…5つのカップのどれかに、星が2つ。2人とも当てられるかな？ はずれたら、のろいをかけてやる！」',
+    opts: [{ label: '2人で勝負する', desc: '2人とも当たり：ごほうび2枚／1人だけ：ごほうび1枚／2人ともはずれ：のろい（次のステージ、はじめにHPが最大HPの25%へる）', act: () => ({ play: 'cups' }) }, { label: 'ことわる', desc: '何もしない', act: () => ({ text: '「つまらんのう」と大王は去っていった。' }) }],
+    result: (r, t) => t === 2 ? ({ text: '2人とも当たり！ 大王はくやしそうだ。ごほうびを2枚えらぼう。', treasure: 2 }) : t === 1 ? ({ text: '1人だけ当たり！ ごほうびを1枚えらぼう。', treasure: 1 }) : ({ text: evLines('ふたりともはずれ…大王に笑われた', EV.curse(r, { hp: 0.25 })) }) },
   // ---- 悪いことしか起きない（えらべるのは、どちらの悪いことにするか） ----
   swamp: { title: 'インクの沼', mark: '〰', text: '道がインクの沼でふさがれている！ どうやって進む？',
     opts: [{ label: '泳いでわたる', desc: 'のろい：次のステージ、はじめのHPが40%へる', act: r => ({ text: evLines('インクまみれになった', EV.curse(r, { hp: 0.4 })) }) },

@@ -5,6 +5,7 @@
    ===================================================== */
 function netGuestMsg(m) {
   if (m.t === 'start') netStartMirror(m);
+  else if (m.t === 'mg') miniGuestState(m); // ミニゲームのようす
   else if (m.t === 'rw') { // ホストがごほうびをえらぶ画面を、ゲストにも同じように見せる（ゲストは提案できる。決めるのはホスト）
     NET.guestReady = false; NET.queue = []; NET.live = false; $('#result').classList.add('hidden');
     COOP = true; COOP_LV = m.lv; NET.mrun = m.run; NET.rwHov = null; NET.rwPick = null; NET.rwSug = null;

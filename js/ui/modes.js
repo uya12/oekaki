@@ -217,9 +217,9 @@ function showReward() {
   const row = $('#rewardRow'); row.innerHTML = ''; row.classList.toggle('watch', guest);
   if (miniStop && !(kind === 'event' && evt && evt.playing && !evt.done)) miniStop(); // ほかの画面に変わったら、ミニゲームは止める
   if (kind === 'event' && evt && evt.playing && !evt.done) { // ふしぎのマス：ミニゲーム
-    row.innerHTML = `<div class="rw-event mini"><canvas class="mini-cv" width="480" height="300"></canvas>${guest ? '<p class="ev-wait">ホストがミニゲーム中…</p>' : '<p class="ev-wait">マウス・タッチ（または スペース・←→キー）であそぶ</p>'}</div>`;
+    row.innerHTML = `<div class="rw-event mini"><canvas class="mini-cv" width="480" height="300"></canvas><p class="ev-wait">${online ? `2人で協力！ あなたは ${guest ? 'P2（サポーター）' : 'P1（ランナー）'}：画面をタップ・ドラッグして操作` : '2人で協力！ P1（ランナー）はキーボード、P2（サポーター）はマウスで操作'}</p></div>`;
     const cv = row.querySelector('.mini-cv');
-    if (guest) drawEventArt(cv.getContext('2d'), evt.id, cv.width, cv.height);
+    if (guest) startMiniView(evt.playing, cv); // ホストから届いたようすを描いて、操作を送る
     else startMini(evt.playing, cv, tier => { if (curRun() !== run || curScreen !== 'scr-reward') return; const res = finishMini(run, tier); if (!res) return; if (res.treasure) { run.rwKind = 'treasure'; run.extra = res.treasure - 1; run.choices = null; } saveStory(); showReward(); });
   } else if (kind === 'event' && evt && evt.opts && !evt.done) { // ふしぎのマス：どうするかえらぶ
     row.innerHTML = `<div class="rw-event">${evArt(evt)}<p>${evt.text}</p><div class="ev-opts">${evt.opts.map((o, i) => `<button class="ev-opt${i === evt.opts.length - 1 ? ' safe' : ''}" data-i="${i}"${guest ? ' disabled' : ''}><b>${o.label}</b><small>${o.desc}</small></button>`).join('')}</div>${guest ? '<p class="ev-wait">ホストがえらんでいます…</p>' : ''}</div>`;
