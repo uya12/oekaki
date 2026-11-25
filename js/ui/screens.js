@@ -7,7 +7,7 @@ let curScreen = 'scr-title';
 function show(id) {
   curScreen = id;
   document.body.classList.toggle('ingame', id === 'scr-game');
-  document.body.classList.toggle('ev-wide', id === 'scr-reward' && $('#scr-reward').classList.contains('ev-mode')); // ふしぎのマスは画面のはばいっぱいに
+  document.body.classList.toggle('ev-wide', id === 'scr-minidbg' || id === 'scr-reward' && $('#scr-reward').classList.contains('ev-mode')); // ふしぎのマスは画面のはばいっぱいに
   $$('.screen').forEach(s => s.classList.toggle('active', s.id === id));
   window.scrollTo(0, 0);
   musicForScreen(id);

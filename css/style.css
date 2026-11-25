@@ -948,3 +948,25 @@ body.mobile.land #scr-reward.ev-mode .rw-event.mini{padding:6px;gap:4px}
 body.mobile.land #scr-reward.ev-mode .rw-event.mini .mini-cv{width:min(100%,calc((var(--evH) - 112px) * 1.6))}
 body.ev-wide #app{max-width:none}
 #scr-reward.ev-mode .reward-have{max-width:none}
+/* ミニゲーム：画面いっぱいに重ねて表示 */
+#scr-reward.ev-mode .rw-event.mini{position:fixed;inset:0;z-index:50;width:auto;justify-self:stretch;align-self:stretch;max-width:none;margin:0;border:0;border-radius:0;box-shadow:none;background:var(--bg);padding:max(6px,var(--saT)) max(6px,var(--saR)) max(6px,var(--saB)) max(6px,var(--saL));gap:4px;justify-content:center;align-items:center}
+#scr-reward.ev-mode .rw-event.mini .mini-cv{width:min(100%,calc((var(--evH) - 44px) * 1.6));height:auto;border-radius:12px}
+#scr-reward.ev-mode .rw-event.mini .ev-wait{font-size:14px}
+body.mobile.land #scr-reward.ev-mode .rw-event.mini .mini-cv{width:min(100%,calc((var(--evH) - 30px) * 1.6))}
+body.mobile.land #scr-reward.ev-mode .rw-event.mini .ev-wait{font-size:10.5px}
+/* れんしゅう画面のミニゲームも大きく */
+#scr-minidbg .mdbg-stage{width:100%;max-width:none;box-sizing:border-box;flex-direction:row;justify-content:center;align-items:center;gap:18px}
+#scr-minidbg .mdbg-stage .mini-cv{flex:none;width:min(calc(100% - 270px),calc((var(--appH) - 250px) * 1.6));height:auto}
+#scr-minidbg .mdbg-side{width:240px}
+body.mobile.land #scr-minidbg .mdbg-stage .mini-cv{width:min(calc(100% - 210px),calc((var(--appH) - 118px) * 1.6))}
+body.mobile.land #scr-minidbg .mdbg-side{width:190px}
+#scr-minidbg .screen-head p{display:none}
+#scr-minidbg .mdbg-side .mdbg-pick{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:0;width:100%}
+#scr-minidbg .mdbg-side .mdbg-pick .btn{padding:6px 4px;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#scr-minidbg .mdbg-stage .mini-cv{width:min(calc(100% - 290px),calc((var(--appH) - 190px) * 1.6))}
+#scr-minidbg .mdbg-side{width:260px}
+body.mobile.land #scr-minidbg .mdbg-side{width:200px}
+body.mobile.land #scr-minidbg .mdbg-side .mdbg-pick{gap:3px}
+body.mobile.land #scr-minidbg .mdbg-side .mdbg-pick .btn{padding:3px 2px;font-size:10px}
+body.mobile.land #scr-minidbg .mdbg-desc{display:none}
+body.mobile.land #scr-minidbg .mdbg-stage .mini-cv{width:min(calc(100% - 220px),calc((var(--appH) - 70px) * 1.6))}
