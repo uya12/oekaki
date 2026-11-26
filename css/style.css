@@ -1232,3 +1232,11 @@ body.mobile.land .si-reward{font-size:12px}
 .rw-pick.card{overflow:visible;padding:14px 12px;text-align:center;border-radius:14px}
 .reward-row.duo .rw-name{font-size:clamp(15px,1.45vw,20px);line-height:1.3}
 body.mobile.land .reward-row.duo .rw-name{font-size:14px}
+.rw-pick.up{font-weight:500}
+/* 明るい色のごほうびカードは、ダークモードでも文字を黒くする（読めなくならないように） */
+.rw-pick.up,.rw-pick.support,.rw-pick.key,.rw-pick.heal,.rw-pick.rup{color:#24252b}
+.rw-pick.up .rw-kind,.rw-pick.support .rw-kind,.rw-pick.key .rw-kind,.rw-pick.heal .rw-kind,.rw-pick.rup .rw-kind,
+.rw-pick.up .rw-desc,.rw-pick.support .rw-desc,.rw-pick.key .rw-desc,.rw-pick.heal .rw-desc,.rw-pick.rup .rw-desc{color:#4a4c55}
+.rw-pick.up .rw-mark,.rw-pick.support .rw-mark,.rw-pick.heal .rw-mark,.rw-pick.rup .rw-mark{background:#fff;color:#24252b;border-color:#24252b}
+/* 4つえらべるとき（カギあり）は、スマホでも1列に4つ */
+body.mobile.land .reward-row:has(> .rw-pick.key){grid-template-columns:repeat(4,minmax(0,1fr))}
