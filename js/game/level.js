@@ -262,7 +262,7 @@ function resetRound() {
   if (COOP && inRun() && curRun().hp != null) P.hp = clamp(Math.ceil(curRun().hp), 1, P.maxHp); // 冒険：前のステージのHPを引きつぐ
   if (COOP && runCurse() && runCurse().hp) P.hp = Math.max(1, Math.round(P.hp - P.maxHp * runCurse().hp)); // のろい：はじめのHPがへる（最大HPの○%）
   // のろい：エネルギー0から
-  energy = COOP ? ((runCurse() || {}).energy0 ? 0 : Math.min(EMAX, 60 + 20 * runBoost('energy'))) : EMAX; timeLeft = roundLen(); tick = 0; state = 'countdown'; countT = COOP ? 300 : 180; camX = 0; shake = 0; hitStop = 0; banner = null; // 対戦：ビルダーはエネルギー満タンで始まる
+  energy = COOP ? ((runCurse() || {}).energy0 ? 0 : Math.min(EMAX, 60 + 15 * runBoost('energy'))) : EMAX; timeLeft = roundLen(); tick = 0; state = 'countdown'; countT = COOP ? 300 : 180; camX = 0; shake = 0; hitStop = 0; banner = null; // 対戦：ビルダーはエネルギー満タンで始まる
   effects = { dark: 0, rev: 0, heavy: 0, boost: 0, freeze: 0, slip: 0, float: 0, seal: 0, gust: 0, gustDir: 1, regen: 0, jumpup: 0, djump: 0, tail: 0, cushion: 0, spikeproof: 0, lamp: 0, slow: 0, nojam: 0 };
   cpu = { energy: 40, timer: 90 };
   trail = []; spawnQueue = [];
