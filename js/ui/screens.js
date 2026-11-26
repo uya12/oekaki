@@ -7,6 +7,7 @@ let curScreen = 'scr-title';
 function show(id) {
   curScreen = id;
   document.body.classList.toggle('ingame', id === 'scr-game');
+  document.body.classList.toggle('scroll-ok', id === 'scr-deck'); // カードを選ぶ画面は、もとのままスクロールして選ぶ
   document.body.classList.toggle('ev-wide', id === 'scr-minidbg' || id === 'scr-reward' && $('#scr-reward').classList.contains('ev-mode')); // ふしぎのマスは画面のはばいっぱいに
   $$('.screen').forEach(s => s.classList.toggle('active', s.id === id));
   window.scrollTo(0, 0);
@@ -34,7 +35,7 @@ function fitBox(el) {
 function fitScreen() {
   const el = document.querySelector('.screen.active');
   const rc = document.querySelector('#result:not(.hidden) .result-card'); if (rc) fitBox(rc); // ステージの結果も、カードの中に収める
-  if (!el || el.id === 'scr-game' || !el.clientHeight) return;
+  if (!el || el.id === 'scr-game' || el.id === 'scr-deck' || !el.clientHeight) return;
   el.querySelectorAll('[data-fit]').forEach(fitBox);
   const kids = [...el.children], cur = parseFloat(el.dataset.fz || '1');
   const set = z => { kids.forEach(c => { c.style.zoom = z === 1 ? '' : z; }); };
@@ -52,7 +53,7 @@ const fitSoon = () => { if (!fitRaf) fitRaf = requestAnimationFrame(() => { fitR
 const fitRO = typeof ResizeObserver === 'function' ? new ResizeObserver(fitSoon) : null;
 function fitWatch() {
   if (!fitRO) return; fitRO.disconnect();
-  const el = document.querySelector('.screen.active'); if (!el || el.id === 'scr-game') return;
+  const el = document.querySelector('.screen.active'); if (!el || el.id === 'scr-game' || el.id === 'scr-deck') return;
   delete el.dataset.fz; [...el.children].forEach(c => { c.style.zoom = ''; fitRO.observe(c); }); fitRO.observe(el);
   fitSoon();
 }
