@@ -1240,3 +1240,74 @@ body.mobile.land .reward-row.duo .rw-name{font-size:14px}
 .rw-pick.up .rw-mark,.rw-pick.support .rw-mark,.rw-pick.heal .rw-mark,.rw-pick.rup .rw-mark{background:#fff;color:#24252b;border-color:#24252b}
 /* 4つえらべるとき（カギあり）は、スマホでも1列に4つ */
 body.mobile.land .reward-row:has(> .rw-pick.key){grid-template-columns:repeat(4,minmax(0,1fr))}
+/* ===== 見やすさの直し（自動チェックで見つかったところ） ===== */
+.draw-hint{color:#717a8b}
+.pa{color:#c25e0c}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .pa{color:#f0913a}}
+:root[data-theme="dark"] .pa{color:#f0913a}
+.card .cat{color:color-mix(in srgb,var(--cat) 62%,#24252b)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .card .cat{color:var(--cat)}}
+:root[data-theme="dark"] .card .cat{color:var(--cat)}
+.tlv{color:#b97e00;text-shadow:none}
+.rw-card .tlv{font-size:1em}
+/* オンライン：つながったら、コードのやりとりの説明はかくして、モードえらびを見やすく */
+#onHost:has(#onModes:not([hidden])) ol,#onHost:has(#onModes:not([hidden])) > p.note{display:none}
+/* れんしゅう画面：ゲームの名前が切れないように1列に */
+body:not(.mobile) #scr-minidbg .mdbg-side .mdbg-pick{grid-template-columns:1fr}
+/* マップ：マスの文字・名前は、ダークモードでも黒（明るい色のマスの上なので） */
+.mnode{color:#24252b}
+.mnode .mbadge{color:#24252b}
+.mnode .mname{color:#24252b}
+/* ふしぎのマスの選択ボタン（黄色）と、下のカード欄 */
+.ev-opt:not(.safe){color:#24252b}
+.ev-opt:not(.safe) small{color:#4a4c55}
+#scr-reward.ev-mode .reward-have{background:color-mix(in srgb,var(--surface) 88%,transparent)}
+/* オンライン：説明の文は、タイトルの付せん（.note）の見た目にしない・コード欄はダークモードでも読める色に */
+.online-card .note{position:static;background:none;padding:0;box-shadow:none;border-radius:0;transform:none;color:var(--ink-soft)}
+.online-card textarea{background:var(--surface-2);color:var(--ink)}
+/* デバッグ：れんしゅう画面 */
+.dbg-tag{color:#24252b}
+.mdbg-ptr{border-color:var(--builder);color:var(--builder)}
+.mdbg-ptr.p1{border-color:var(--runner);color:var(--runner)}
+/* タイトルの文字の上が切れないように少し余白・キャラを描く画面は高さが低いとき「解析結果」をかくす（文字が小さくなりすぎないように） */
+body:not(.mobile) #scr-title .hero{padding-top:6px}
+@media (max-height:740px){body:not(.mobile) #scr-draw .draw-grid>aside:last-child .sect:nth-child(3){display:none}}
+.res-medals:empty{display:none}
+/* ===== スマホの直し（自動チェックで見つかったところ） ===== */
+/* キャラを描く：「能力の決まり方」はかくして、ペン・消しゴムなどのボタンを大きいままに */
+body.mobile.land #scr-draw .draw-grid>aside:first-child .sect:nth-child(4){display:none}
+/* タイトル：文字の上が切れないように少し余白・「あそびかた」を開いたときは説明だけ */
+body.mobile.land #scr-title .hero{padding-top:4px}
+body.mobile.show-rules #scr-title .cta{display:none}
+/* 優勝画面（オンラインの先取マッチ）：左にキャラ、右に記録、下にボタン（はみ出さないように） */
+body.mobile.land #scr-victory.active{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);grid-template-rows:minmax(0,1fr) auto;gap:6px 10px}
+body.mobile.land #scr-victory .vic-stage{grid-column:1;grid-row:1;width:min(100%,calc((var(--appH) - 110px) * 16 / 9));max-width:none;align-self:center;justify-self:center;margin:0}
+body.mobile.land #scr-victory .vic-summary{grid-column:2;grid-row:1;margin:0;max-width:none;grid-template-columns:1fr;gap:6px;overflow:hidden;min-height:0;align-content:start}
+body.mobile.land #scr-victory .vic-summary .panel{padding:6px 10px}
+body.mobile.land #scr-victory .vic-btns{grid-column:1/-1;grid-row:2;margin:0}
+body.mobile.land #scr-victory .vic-btns .btn.big{font-size:15px;padding:7px 18px}
+/* 2人でえらぶごほうび：スマホでは種類の文字を1行に・高さが低いときは手持ちカードの一覧をかくす */
+body.mobile.land .reward-row.duo .rw-kind{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+@media (max-height:380px){
+  body.mobile.land #scr-reward:not(.ev-mode) .reward-row.duo~.reward-have>div:first-child{display:none}
+  body.mobile.land #scr-reward:not(.ev-mode) .reward-row.duo~.reward-have{grid-template-columns:1fr;padding:3px 10px}
+  body.mobile.land #scr-reward:not(.ev-mode) .reward-row.duo~.reward-have b{display:none}
+}
+/* キャラを描く（スマホの右の欄）：能力の細かい数字・見出しをかくして、文字とボタンを大きいままに */
+body.mobile.land #scr-draw .draw-grid>aside:last-child .sect:first-child>h3,
+body.mobile.land #scr-draw .stat-sub,
+body.mobile.land #scr-draw #goHint{display:none}
+body.mobile.land #scr-draw .draw-grid>aside:last-child .sect+.sect{margin-top:4px;padding-top:4px}
+.rw-card .tlv{color:#9a6700}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .card .cat{color:color-mix(in srgb,var(--cat) 70%,#fff)}}
+:root[data-theme="dark"] .card .cat{color:color-mix(in srgb,var(--cat) 70%,#fff)}
+/* EXのカギの数：スマホのマップでは短く出す */
+.pc-keys{display:none}
+body.mobile.land #scr-story.active .page-card.ex .pc-keys{display:inline;font-size:12px;font-weight:900;color:#ffd23f;margin-left:auto}
+/* スマホのオンライン：結果・ポーズのときは、まわりのタッチボタンと上のボタンをかくす（結果のボタンに重ならないように） */
+body.mob-net.ingame:has(#result:not(.hidden)) .touchpad,
+body.mob-net.ingame:has(#result:not(.hidden)) .game-head,
+body.mob-net.ingame:has(#pauseMenu:not(.hidden)) .touchpad{display:none!important}
+/* スマホ：オンラインの小さいボタン・「あそびかた」を押しやすい大きさに */
+body.mobile .online-card .btn.sm,body.mobile #btnRules{min-height:28px;padding-top:4px;padding-bottom:4px}
+.rw-side.done .rw-st{color:#1f7a46} @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .rw-side.done .rw-st{color:#45c985}} :root[data-theme="dark"] .rw-side.done .rw-st{color:#45c985}

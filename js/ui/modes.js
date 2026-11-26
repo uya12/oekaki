@@ -171,7 +171,7 @@ function showStory() {
   {
     const ok = exUnlocked(), eb = document.createElement('button');
     eb.className = 'page-card ex' + (ok ? '' : ' locked') + (storySel === EX_IDX ? ' sel' : '');
-    eb.innerHTML = `<span class="pc-no">EXステージ</span><span class="pc-name hand">${ok ? EX_PAGE.name : '？？？'}</span><span class="pc-rank">${ok ? (sv.ranks[EX_IDX] ? 'ベスト ランク' + sv.ranks[EX_IDX] : '未クリア') : `EXのカギ ${exKeyCount(COOP_LV)} / 2：たからばこで1つ、超強敵ステージか休けいで1つ`}</span>${ok ? `<span class="pc-medal">${medalHtml(sv.medals && sv.medals[EX_IDX])}</span>` : ''}`;
+    eb.innerHTML = `<span class="pc-no">EXステージ</span><span class="pc-name hand">${ok ? EX_PAGE.name : '？？？'}</span><span class="pc-rank">${ok ? (sv.ranks[EX_IDX] ? 'ベスト ランク' + sv.ranks[EX_IDX] : '未クリア') : `EXのカギ ${exKeyCount(COOP_LV)} / 2：たからばこで1つ、超強敵ステージか休けいで1つ`}</span>${ok ? '' : `<span class="pc-keys">🔑 ${exKeyCount(COOP_LV)} / 2</span>`}${ok ? `<span class="pc-medal">${medalHtml(sv.medals && sv.medals[EX_IDX])}</span>` : ''}`;
     eb.addEventListener('click', () => { storySel = storySel === EX_IDX ? 0 : EX_IDX; showStory(); });
     grid.appendChild(eb);
   }
@@ -297,7 +297,9 @@ function showReward() {
     else if (isUp) { const u = CARD_UP[r.id], a = r.lv - 1; desc = `コスト ${u.cost[a]} → <b>${u.cost[r.lv]}</b>／${u.f(u.v[a], a)} → <b>${u.f(u.v[r.lv], r.lv)}</b>`; }
     else if (isRup) { const u = RUN_UP[r.id], a = r.lv - 1; desc = `${u.f(u.v[a], a)} → <b>${u.f(u.v[r.lv], r.lv)}</b>`; }
     else desc = bo.desc + (run.boosts[r.id] ? `（いま ${run.boosts[r.id]} → ${run.boosts[r.id] + 1}）` : '');
-    b.innerHTML = `<span class="rw-kind">${isHeal ? 'ひと休み' : isCard ? 'サポーターのカード' : isUp ? 'カードのアップグレード' : isRup ? 'ランナーのアップグレード' : bo.who === 'runner' ? 'ランナーの強化' : 'サポーターの強化'}</span>
+    const kindTxt = duo ? (isHeal ? 'ひと休み' : isCard ? '新しいカード' : isUp || isRup ? 'アップグレード' : '強化') // 2人でえらぶときは、列の見出しでだれのものかわかるので短く
+      : isHeal ? 'ひと休み' : isCard ? 'サポーターのカード' : isUp ? 'カードのアップグレード' : isRup ? 'ランナーのアップグレード' : bo.who === 'runner' ? 'ランナーの強化' : 'サポーターの強化';
+    b.innerHTML = `<span class="rw-kind">${kindTxt}</span>
       ${isCard || isUp ? '<canvas width="208" height="128"></canvas>' : `<span class="rw-mark">${isHeal ? '♥' : bo.mark}</span>`}
       <span class="rw-name hand">${isHeal ? '休む' : isUp ? `${CARD[r.id].name} <b class="tlv">${stars(r.lv)}</b>` : isRup ? `${BOOSTS[r.id].name} <b class="tlv">${stars(r.lv - 1)}</b>` : rewardName(r)}</span>
       <span class="rw-desc">${desc}</span>${r.area && REWARD_AREA[r.area] ? `<span class="rw-area">★ ${REWARD_AREA[r.area].name}</span>` : ''}${online && !duo ? '<span class="rw-badges"><i class="p1">P1</i><i class="p2">P2のおすすめ</i></span>' : ''}`;

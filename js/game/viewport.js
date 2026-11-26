@@ -19,6 +19,7 @@ function fitStage() {
   const vw = (isRot() ? viewW() : root.clientWidth) - 12, vh = viewH();
   const tpH = getComputedStyle(tp).display !== 'none' ? tp.offsetHeight + 8 : 0;
   root.style.setProperty('--topbarW', ($('.topbar').offsetWidth + 12) + 'px'); // 上のボタン列はゲーム画面の見出しと同じ行に並べる
+  topbarSeen = $('.topbar').offsetWidth;
   body.classList.remove('side');
   root.style.setProperty('--stageW', vw + 'px');
   const top = isRot() ? body.offsetTop : body.getBoundingClientRect().top + window.scrollY;
@@ -72,3 +73,11 @@ const hatch = (() => {
   x.beginPath(); x.moveTo(0, 10); x.lineTo(10, 0); x.moveTo(-5, 5); x.lineTo(5, -5); x.moveTo(5, 15); x.lineTo(15, 5); x.stroke();
   return g.createPattern(c, 'repeat');
 })();
+
+// 上のボタン列の文字（いまの階など）が変わって幅が変わったら、見出しの右の空きも合わせ直す（重ならないように）
+let topbarSeen = 0;
+if (typeof ResizeObserver === 'function') new ResizeObserver(() => {
+  const w = $('.topbar').offsetWidth;
+  const onGame = () => typeof curScreen === 'string' && curScreen === 'scr-game'; // 読みこみ中（画面の処理がまだのとき）は何もしない
+  if (onGame() && w && Math.abs(w - topbarSeen) > 1) requestAnimationFrame(() => { if (onGame()) resizeGame(); });
+}).observe($('.topbar'));
