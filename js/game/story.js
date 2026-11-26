@@ -167,7 +167,7 @@ const runLv = k => Math.min(3, runBoost(k));
 const runVal = k => RUN_UP[k].v[runLv(k)];
 // オンラインのゲストは、ホストから届いた冒険（NET.mrun）を使う
 const curRun = () => NET.role === 'guest' && NET.mrun !== undefined ? NET.mrun : storySave[COOP_LV].run;
-const runShare = run => run ? { stage: run.stage, deck: run.deck, ups: run.ups || {}, boosts: run.boosts, pending: run.pending, choices: run.choices, rwKind: run.rwKind, extra: run.extra || 0, evt: run.evt || null, curse: run.curse || null, maxHpDown: run.maxHpDown || 0, hp: runHpNow(run), hpMax: runMaxHp(run) } : null;
+const runShare = run => run ? { stage: run.stage, deck: run.deck, ups: run.ups || {}, boosts: run.boosts, pending: run.pending, choices: run.choices, duo: !!run.duo, picks: run.picks || null, rwKind: run.rwKind, extra: run.extra || 0, evt: run.evt || null, curse: run.curse || null, maxHpDown: run.maxHpDown || 0, hp: runHpNow(run), hpMax: runMaxHp(run) } : null;
 const inRun = () => COOP && storyIdx !== EX_IDX && !!curRun();
 const runBoost = k => inRun() ? (curRun().boosts[k] || 0) : 0;
 const runUps = () => inRun() ? (curRun().ups || {}) : {};
@@ -207,6 +207,26 @@ function runMaxHp(run) {
 }
 const runHpNow = run => { const m = runMaxHp(run); return run.hp == null ? m : clamp(Math.ceil(run.hp), 0, m); };
 function healRun(run, amount) { const m = runMaxHp(run), now = runHpNow(run), nx = Math.min(m, Math.round(now + amount)); run.hp = nx >= m ? null : nx; return Math.round(nx - now); }
+/* 戦闘後のごほうび：ランナーとサポーターが、それぞれ自分の3つから1つずつえらぶ
+   side：'r' = ランナーがえらぶ ／ 's' = サポーターがえらぶ */
+function rollRewardsDuo(run) {
+  const shuffle = a => { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+  const cards = shuffle(SUPPORT_DECK.filter(id => !run.deck.includes(id)).map(id => ({ type: 'card', id })));
+  const boosts = shuffle(Object.keys(BOOSTS).filter(k => (run.boosts[k] || 0) < BOOSTS[k].max && (!BOOSTS[k].needs || BOOSTS[k].needs.some(c => run.deck.includes(c)))).map(k => ({ type: 'boost', id: k })));
+  const ups = shuffle(run.deck.filter(id => CARD_UP[id] && ((run.ups || {})[id] || 0) < UP_MAX).map(id => ({ type: 'up', id, lv: ((run.ups || {})[id] || 0) + 1 })));
+  const runNew = boosts.filter(r => BOOSTS[r.id].who === 'runner' && !run.boosts[r.id]);
+  const rups = boosts.filter(r => BOOSTS[r.id].who === 'runner' && run.boosts[r.id]).map(r => ({ type: 'rup', id: r.id, lv: Math.min(3, run.boosts[r.id]) + 1 }));
+  const sups = boosts.filter(r => BOOSTS[r.id].who !== 'runner');
+  const take = (pools, n) => { // いろいろな種類がまざるように、順番に1つずつ
+    const out = []; let k = 0, guard = 0;
+    while (out.length < n && pools.some(q => q.length) && guard++ < 40) { const q = pools[k++ % pools.length]; if (q.length) out.push(q.shift()); }
+    return out;
+  };
+  const runner = take([runNew, rups], 3);
+  if (runner.length < 3) runner.push({ type: 'heal', pct: 0.25 }); // ランナーの強化がもうないときは、回復
+  const support = take([cards, ups, sups], 3);
+  return shuffle(runner).map(r => Object.assign(r, { side: 'r' })).concat(shuffle(support).map(r => Object.assign(r, { side: 's' })));
+}
 function applyReward(run, r) {
   const maxBefore = runMaxHp(run);
   if (r.type === 'heal') { healRun(run, maxBefore * r.pct); return; }

@@ -1109,3 +1109,22 @@ body.mobile.land #scr-draw .screen-head>p{display:none}
 body.scroll-ok #app{height:auto;display:block;overflow:visible;padding-bottom:32px}
 body.scroll-ok .screen.active{overflow:visible}
 body.mobile.land.scroll-ok #scr-deck.active{height:calc(var(--lh) - 44px)}
+
+/* 戦闘後のごほうび：左にランナー、右にサポーター。1つずつえらぶ */
+.reward-row.duo{display:grid;grid-template-columns:1fr 1fr;gap:16px;max-width:1200px}
+.rw-side{display:flex;flex-direction:column;gap:8px;padding:10px 12px 12px;border-radius:14px;min-width:0}
+.rw-side.r{background:rgba(232,48,95,.08)} .rw-side.s{background:rgba(42,91,215,.08)}
+.rw-side h3{margin:0;font-size:17px;display:flex;align-items:center;gap:8px}
+.rw-side .rw-st{margin-left:auto;font-size:13px;font-weight:700;color:var(--ink-soft)}
+.rw-side.done .rw-st{color:#2a9d5c;font-weight:900}
+.rw-side-row{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.rw-side.locked .rw-pick{cursor:default}
+.rw-side.done .rw-pick:not(.chosen){opacity:.55}
+body.mobile.land .reward-row.duo{gap:8px}
+body.mobile.land .rw-side{padding:6px 6px 8px;gap:4px}
+body.mobile.land .rw-side h3{font-size:13px}
+body.mobile.land .rw-side .rw-st{font-size:10px}
+body.mobile.land .rw-side-row{gap:5px}
+@media (max-width:760px){body:not(.mobile) .reward-row.duo{grid-template-columns:1fr}}
+.reward-row.duo~.reward-have{max-width:1200px}
+body.mobile.land .reward-row.duo,body .reward-row.duo{grid-template-columns:1fr 1fr}

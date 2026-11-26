@@ -209,13 +209,27 @@ function showReward() {
   if (!guest) { NET.rwHov = null; NET.rwPick = null; NET.rwSug = null; }
   const kind = run.rwKind || 'stage', evt = run.evt, left = (run.extra || 0) + 1;
   if (evt && evt.id === 'target') { evt.id = 'rope'; evt.title = EVENTS.rope.title; if (evt.playing) evt.playing = 'rope'; } // 前の版の「えんぴつのまと」は大なわとびに
-  if (!guest && kind !== 'event' && (!run.choices || !run.choices.length)) { run.choices = kind === 'rest' ? rollUpgrades(run) : rollRewards(run); saveStory(); }
+  if (!guest && kind !== 'event' && (!run.choices || !run.choices.length)) { run.duo = kind === 'stage' || kind === 'elite'; run.picks = null; run.choices = kind === 'rest' ? rollUpgrades(run) : run.duo ? rollRewardsDuo(run) : rollRewards(run); saveStory(); }
+  const duo = !!(run.duo && run.choices && run.choices.length && run.choices[0].side); // 戦闘後：ランナーとサポーターが1つずつ
   run.choices = kind === 'event' ? [] : run.choices || [];
   const online = rewardOnline();
   $('#rewardTitle').textContent = evt ? `ふしぎ：${evt.title}` : kind === 'rest' ? '休けい：休むか、アップグレードを1つえらぼう' : kind === 'treasure' ? `たからばこ！ ごほうびをえらぼう${left > 1 ? `（あと${left}枚）` : ''}`
+    : duo ? (kind === 'elite' ? `強敵をたおした！ 2人で1つずつえらぼう（あと${left}回）` : `${run.stage}階 クリア！ 2人で1つずつごほうびをえらぼう`)
     : kind === 'elite' ? `強敵をたおした！ ごほうびをえらぼう（あと${left}枚）` : `${run.stage}階 クリア！ ごほうびを1枚えらぼう`;
-  $('#rewardSub').textContent = (evt && kind !== 'event' ? evt.text + '　' : '') + (kind === 'event' ? '' : 'えらんだら、マップで次の道をえらぼう。') + (kind === 'event' ? '' : guest ? '　カードをタップすると、ホストに「これがいい！」と提案できます（決めるのはホスト）' : online ? '　サポーターの提案には「P2のおすすめ」がつきます。えらんでいるカードは相手の画面にも見えます' : '');
+  $('#rewardSub').textContent = duo ? (online ? `あなたは${duoMySide() === 'r' ? 'P1 ランナー' : 'P2 サポーター'}：自分の列から1つえらぼう。2人ともえらんだら決定です（もう一度押すと取り消し）` : 'P1 ランナーは左、P2 サポーターは右から1つずつ。2人ともえらんだら決定です（もう一度押すと取り消し）')
+    : (evt && kind !== 'event' ? evt.text + '　' : '') + (kind === 'event' ? '' : 'えらんだら、マップで次の道をえらぼう。') + (kind === 'event' ? '' : guest ? '　カードをタップすると、ホストに「これがいい！」と提案できます（決めるのはホスト）' : online ? '　サポーターの提案には「P2のおすすめ」がつきます。えらんでいるカードは相手の画面にも見えます' : '');
   const row = $('#rewardRow'); row.innerHTML = ''; row.classList.toggle('watch', guest);
+  row.classList.toggle('duo', duo);
+  const sideRow = {};
+  if (duo) { // 左：ランナー、右：サポーター
+    const mine = duoMySide();
+    for (const [sd, label] of [['r', '<span class="pill p1">P1</span> ランナーがえらぶ'], ['s', '<span class="pill p2">P2</span> サポーターがえらぶ']]) {
+      if (!run.choices.some(c => c.side === sd)) continue;
+      const box = document.createElement('div'); box.className = `rw-side ${sd}${online && mine !== sd ? ' locked' : ''}`; box.dataset.side = sd;
+      box.innerHTML = `<h3>${label}<small class="rw-st"></small></h3><div class="rw-side-row"></div>`;
+      row.appendChild(box); sideRow[sd] = box.querySelector('.rw-side-row');
+    }
+  }
   $('#scr-reward').classList.toggle('ev-mode', kind === 'event' && !!evt); // ふしぎのマスは、画面いっぱいに大きく見せる
   if (miniStop && !(kind === 'event' && evt && evt.playing && !evt.done)) miniStop(); // ほかの画面に変わったら、ミニゲームは止める
   if (kind === 'event' && evt && evt.playing && !evt.done) { // ふしぎのマス：ミニゲーム
@@ -251,8 +265,9 @@ function showReward() {
     b.innerHTML = `<span class="rw-kind">${isHeal ? 'ひと休み' : isCard ? 'サポーターのカード' : isUp ? 'カードのアップグレード' : isRup ? 'ランナーのアップグレード' : bo.who === 'runner' ? 'ランナーの強化' : 'サポーターの強化'}</span>
       ${isCard || isUp ? '<canvas width="208" height="128"></canvas>' : `<span class="rw-mark">${isHeal ? '♥' : bo.mark}</span>`}
       <span class="rw-name hand">${isHeal ? '休む' : isUp ? `${CARD[r.id].name} <b class="tlv">${stars(r.lv)}</b>` : isRup ? `${BOOSTS[r.id].name} <b class="tlv">${stars(r.lv - 1)}</b>` : rewardName(r)}</span>
-      <span class="rw-desc">${desc}</span>${online ? '<span class="rw-badges"><i class="p1">P1</i><i class="p2">P2のおすすめ</i></span>' : ''}`;
+      <span class="rw-desc">${desc}</span>${online && !duo ? '<span class="rw-badges"><i class="p1">P1</i><i class="p2">P2のおすすめ</i></span>' : ''}`;
     if (isCard || isUp) iconCanvas(b.querySelector('canvas'), r.id, 104, 64);
+    if (duo) { b.addEventListener('click', () => duoPick(ci)); sideRow[r.side].appendChild(b); return; } // 2人で1つずつ
     if (!guest) {
       b.addEventListener('pointerenter', () => rewardHover(ci));
       b.addEventListener('focus', () => rewardHover(ci));
@@ -267,7 +282,40 @@ function showReward() {
   if (!guest) netSendReward(); // オンライン：ゲストにも同じごほうびを見せる
 }
 // えらんでいるカード（hov）・決めたカード（chosen）を光らせる
+// 2人で1つずつ：この画面で自分がえらべる列（ひとりで遊ぶときは両方）
+function duoMySide() { return !rewardOnline() ? 'both' : netIAmRunner() ? 'r' : 's'; }
+function duoPick(i) {
+  const run = curRun(), r = run && run.choices && run.choices[i]; if (!r || !r.side || NET.rwDone) return;
+  const mine = duoMySide(); if (mine !== 'both' && mine !== r.side) { SFX.deny(); return; }
+  if (NET.role === 'guest') { SFX.pick(); netSend({ t: 'rwduo', side: r.side, i }); return; } // ゲスト：ホストに伝える（決めるのはホスト）
+  duoSet(r.side, i);
+}
+// ホスト（ひとりのときも）：えらんだものを記録して、2人ともえらんだら決定
+function duoSet(side, i) {
+  const run = curRun(); if (!run || !run.choices || !run.choices[i] || run.choices[i].side !== side || NET.rwDone) return;
+  run.picks = Object.assign({}, run.picks); run.picks[side] = run.picks[side] === i ? null : i; // もう一度押すと取り消し
+  SFX.pick(); markReward(); if (rewardOnline()) netSend({ t: 'rwduo', picks: run.picks });
+  const need = ['r', 's'].filter(sd => run.choices.some(c => c.side === sd));
+  if (!need.every(sd => run.picks[sd] != null)) return;
+  NET.rwDone = true; saveStory();
+  setTimeout(() => {
+    NET.rwDone = false; if (curRun() !== run || curScreen !== 'scr-reward') return;
+    need.forEach(sd => applyReward(run, run.choices[run.picks[sd]])); run.picks = null;
+    if (run.extra > 0) { run.extra--; run.choices = null; saveStory(); showReward(); return; } // 強敵：もう1回
+    run.pending = false; run.choices = null; run.evt = null; saveStory(); mapSel = null; showStory();
+  }, rewardOnline() ? 1000 : 600);
+}
 function markReward() {
+  { const run = curRun();
+    if (run && run.duo && document.querySelector('#rewardRow.duo')) { // 2人で1つずつ
+      const pk = run.picks || {}, mine = duoMySide();
+      document.querySelectorAll('#rewardRow .rw-pick').forEach((b, i) => b.classList.toggle('chosen', pk.r === i || pk.s === i));
+      document.querySelectorAll('#rewardRow .rw-side').forEach(box => {
+        const sd = box.dataset.side, done = pk[sd] != null; box.classList.toggle('done', done);
+        box.querySelector('.rw-st').textContent = done ? 'えらんだ！' : mine === 'both' || mine === sd ? '1つえらんでね' : `${sd === 'r' ? 'ランナー' : 'サポーター'}がえらんでいます…`;
+      });
+      return;
+    } }
   document.querySelectorAll('#rewardRow .rw-pick').forEach((b, i) => {
     b.classList.toggle('hov', NET.rwHov === i && NET.rwPick == null); b.classList.toggle('chosen', NET.rwPick === i);
     b.classList.toggle('sug', NET.rwSug === i); // サポーター（ゲスト）のおすすめ

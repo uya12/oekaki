@@ -16,6 +16,7 @@ function supporterDown() {
 function netSendReward() { if (NET.role === 'host' && NET.open && !NET.vsMode) netSend({ t: 'rw', lv: COOP_LV, run: runShare(curRun()) }); }
 function netHostInput(m) {
   if (m.t === 'mgin') { if (curScreen === 'scr-reward') miniGuestInput(m); return; } // ミニゲーム：ゲスト（P2）の操作
+  if (m.t === 'rwduo') { if (curScreen === 'scr-reward' && m.side === (netIAmRunner() ? 's' : 'r')) duoSet(m.side, m.i); return; } // ゲストがえらんだ（自分の列だけ）
   if (m.t === 'rwsug') { // ゲストのおすすめ（ごほうび）
     if (curScreen !== 'scr-reward' || NET.rwPick != null) return;
     NET.rwSug = m.i; markReward(); if (m.i != null) { SFX.pick(); netToast('サポーターが「これがいい！」と提案しています', 2500); }

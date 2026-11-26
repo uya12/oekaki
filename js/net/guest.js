@@ -11,6 +11,7 @@ function netGuestMsg(m) {
     COOP = true; COOP_LV = m.lv; NET.mrun = m.run; NET.rwHov = null; NET.rwPick = null; NET.rwSug = null;
     showReward();
   }
+  else if (m.t === 'rwduo') { if (NET.mrun) NET.mrun.picks = m.picks; if (curScreen === 'scr-reward') markReward(); }
   else if (m.t === 'rwhov') { NET.rwHov = m.i; if (m.pick) { NET.rwPick = m.i; SFX.pick(); } if (curScreen === 'scr-reward') markReward(); }
   else if (m.t === 'mode') netOnMode(m);
   else if (m.t === 'vic') netShowVictory(m);
