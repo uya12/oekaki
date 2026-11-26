@@ -74,14 +74,14 @@ function showResult() {
     if (win) {
       const order = 'CBAS';
       if (!sv.ranks[rk] || order.indexOf(rank) > order.indexOf(sv.ranks[rk])) sv.ranks[rk] = rank;
-      // 冒険：次のステージへ進めて、ごほうびをえらぶ状態にする。最後のステージなら冒険クリア（EX解放）
+      // 冒険：次のステージへ進めて、ごほうびをえらぶ状態にする。最後のステージなら冒険クリア
       if (storyIdx !== EX_IDX && sv.run) runStageCleared(sv); // マップの次の階へ。ごほうびをえらぶ状態に
       saveStory(); updateScoreUI();
     }
     title.textContent = win ? `${storyIdx === EX_IDX ? 'EXステージ' : `${storyIdx + 1}階`} クリア！ ランク ${rank}` : 'ざんねん…';
     title.className = 'hand ' + (win ? 'r' : 'b');
     $('#btnNextPage').hidden = !win || storyIdx === EX_IDX;
-    $('#btnNextPage').textContent = storyIdx >= STORY.length - 1 ? 'エンディングへ' : pageDef(storyIdx).elite ? '次へ：ごほうびを2枚えらぶ' : '次へ：ごほうびをえらぶ';
+    $('#btnNextPage').textContent = storyIdx >= STORY.length - 1 ? 'エンディングへ' : pageDef(storyIdx).elite ? '次へ：ごほうびを2回えらぶ' : '次へ：ごほうびをえらぶ';
     $('#resCols').innerHTML = `
       <div><h4 style="color:var(--runner)">P1 ランナー：${escapeHtml(CH.name)}</h4>
         <p><span>到達度</span><b>${win ? 100 : Math.round(progress() * 100)}%</b></p>
@@ -93,7 +93,7 @@ function showResult() {
         <p><span>スコア</span><b>${win ? score : '—'}</b></p></div>`;
     const cm = $('#resMatch'); cm.hidden = false;
     cm.innerHTML = `${storyIdx === EX_IDX ? 'EXステージ' : `${storyIdx + 1}階`}「${pageDef(storyIdx).name}」（大王の強さ：${CPU_LV[COOP_LV].name}）　ベスト <b>${sv.ranks[rk] || '—'}</b>
-      <div class="res-medals">${(() => { const k = bestMedal(got); if (!k) return ''; const nb = MEDAL_ORDER.indexOf(k) > MEDAL_ORDER.indexOf(bestMedal(prevM)); return `<span class="res-medal">${medalOne(k, ' big' + (nb ? ' new' : ''))}<small>${MEDAL_JP[k][0]}メダル（${MEDAL_JP[k][1]}）${nb ? ' <b class="newtag">NEW!</b>' : ''}</small></span>`; })()}</div>${!exBefore && exOpen(COOP_LV) ? '<p class="ex-unlock">15階の冒険をクリア！ EXステージが解放された！</p>' : ''}`;
+      <div class="res-medals">${(() => { const k = bestMedal(got); if (!k) return ''; const nb = MEDAL_ORDER.indexOf(k) > MEDAL_ORDER.indexOf(bestMedal(prevM)); return `<span class="res-medal">${medalOne(k, ' big' + (nb ? ' new' : ''))}<small>${MEDAL_JP[k][0]}メダル（${MEDAL_JP[k][1]}）${nb ? ' <b class="newtag">NEW!</b>' : ''}</small></span>`; })()}</div>${!exBefore && exOpen(COOP_LV) ? '<p class="ex-unlock">EXのカギがそろった！ EXステージが解放された！</p>' : ''}`;
   }
   $('#result').classList.remove('hidden');
   if (NET.role === 'host') netSendResult();

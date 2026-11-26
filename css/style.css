@@ -1221,3 +1221,10 @@ body.mobile.land .rw-area{font-size:9px;top:3px;left:4px;padding:0 5px}
 .si-reward{font-size:14px}
 body.mobile.land .si-rwline{font-size:13px;margin:4px 0 2px}
 body.mobile.land .si-reward{font-size:12px}
+
+/* 超強敵ステージ・EXのカギ */
+.mnode.super{background:#e6d2ff;color:#6a2bb8}
+.mnode .mbadge.mb-super{background:#6a2bb8;color:#fff}
+.rw-pick.key{background:#fff1c2}
+.rw-pick.key .rw-mark{font-size:28px;background:#ffd23f}
+.reward-row:has(> .rw-pick.key){grid-template-columns:repeat(4,minmax(0,1fr));max-width:1100px}

@@ -56,7 +56,7 @@ const STORY = [
 const OPENING = ['ノートのすみっこで生まれたラクガキが、目をさました。', 'ところが、ページのあちこちが何者かに消されて、道がボロボロになっている。', 'サポーター「だいじょうぶ。足りない道は、わたしがつなぐから！」'];
 const ENDING = ['最後のゴールにたどりつくと、消しゴム大王はしょんぼりとうなだれた。', '大王「…ほんとうは、みんなといっしょにラクガキしたかっただけなのだ」', 'その日から、ノートには3人ぶんの新しいラクガキが描き足されていった。おしまい。'];
 const KIND_JP = { pit: '大穴', wall: '絶壁', gate: 'スイッチ扉', spikes: 'トゲ地帯', key: 'カギの扉', lift: 'リフト', dark: '暗闇', darkpit: '暗闇の大穴' };
-// ---- EXステージ：15ステージの冒険を最後までクリアすると解放される、とても難しいステージ（冒険とは別に1回ずつ遊ぶ） ----
+// ---- EXステージ：EXのカギを2つそろえると解放される、とても難しいステージ（冒険とは別に1回ずつ遊ぶ） ----
 const EX_IDX = STORY.length;
 const EX_PAGE = { name: '真っ白なページ', bg: 'ex', terr: '#e6e1f0', ex: true,
   kinds: ['darkpit', 'lift', 'spikes', 'key', 'gate', 'darkpit', 'wall', 'dark', 'lift', 'spikes', 'gate', 'darkpit', 'key', 'spikes', 'darkpit'],
@@ -69,18 +69,19 @@ const isEX = () => COOP && storyIdx === EX_IDX;
 let storyIdx = 0, storySel = 0, storyCH = null, storyStrokes = null;
 const STORY_KEY = 'rr-story-v2';
 // セーブ：ステージごとのベストランク・メダル／cleared = 冒険を最後までクリアした（EX解放）／run = いまの冒険のつづき
-const newSave = () => ({ open: 1, ranks: [], medals: [], pages: STORY.length, cleared: false, run: null });
+const newSave = () => ({ open: 1, ranks: [], medals: [], pages: STORY.length, cleared: false, run: null, exKeys: {} }); // exKeys：EXのカギ（t = たからばこ／b = 超強敵か休けい）
 let storySave = { easy: newSave(), normal: newSave(), hard: newSave() };
 try {
   const sv = JSON.parse(localStorage.getItem(STORY_KEY) || 'null');
   if (sv) for (const k of Object.keys(storySave)) {
     const o = sv[k]; if (!o) continue;
-    if (o.pages === STORY.length) { storySave[k] = Object.assign(newSave(), { open: o.open || 1, ranks: o.ranks || [], medals: o.medals || [], cleared: !!o.cleared, run: o.run || null }); continue; }
+    if (o.pages === STORY.length) { storySave[k] = Object.assign(newSave(), { open: o.open || 1, ranks: o.ranks || [], medals: o.medals || [], cleared: !!o.cleared, run: o.run || null, exKeys: o.exKeys || (o.cleared ? { t: 1, b: 1 } : {}) }); continue; } // 前の版でEXを開けていた人は、そのまま
     // 前の版（4ページ・8ページ）の記録を、15ステージ版の同じステージへ移す
     const MAP = o.pages === 8 ? [0, 1, 3, 5, 6, 8, 12, 14] : [0, 1, 5, 14], EXOLD = o.pages === 8 ? 8 : 4, ranks = [], medals = [];
     (o.ranks || []).forEach((r, i) => { if (i === EXOLD) ranks[EX_IDX] = r; else if (MAP[i] != null) ranks[MAP[i]] = r; });
     (o.medals || []).forEach((m, i) => { if (i === EXOLD) medals[EX_IDX] = m; else if (MAP[i] != null) medals[MAP[i]] = m; });
-    storySave[k] = Object.assign(newSave(), { ranks, medals, cleared: !!(o.ranks && o.ranks[MAP.length - 1]) });
+    const done = !!(o.ranks && o.ranks[MAP.length - 1]);
+    storySave[k] = Object.assign(newSave(), { ranks, medals, cleared: done, exKeys: done ? { t: 1, b: 1 } : {} });
   }
 } catch (_e) {}
 
@@ -254,6 +255,7 @@ function rollRewardsDuo(run, area) {
 }
 function applyReward(run, r) {
   const maxBefore = runMaxHp(run);
+  if (r.type === 'key') { exGetKey(r.k); return; } // EXのカギ（ほかのごほうびのかわりに）
   if (r.type === 'heal') { healRun(run, maxBefore * r.pct); return; }
   if (r.type === 'card') { if (!run.deck.includes(r.id)) run.deck.push(r.id); run.deck.sort((a, b) => SUPPORT_DECK.indexOf(a) - SUPPORT_DECK.indexOf(b)); }
   else if (r.type === 'up') { run.ups = run.ups || {}; run.ups[r.id] = Math.min(UP_MAX, (run.ups[r.id] || 0) + 1); }
@@ -267,7 +269,18 @@ const MEDAL_ORDER = ['silver', 'gold', 'rainbow'];
 const MEDAL_JP = { silver: ['銀', 'クリア'], gold: ['金', 'Sランク'], rainbow: ['虹', 'ノーダメージ'] };
 const bestMedal = m => !m ? null : m.rainbow ? 'rainbow' : m.gold ? 'gold' : m.silver ? 'silver' : null;
 const medalOne = (k, extra = '') => `<span class="medal-wrap ${k}${extra}"><span class="rib"></span><span class="medal ${k}" title="${MEDAL_JP[k][0]}メダル：${MEDAL_JP[k][1]}" aria-label="${MEDAL_JP[k][0]}メダル"></span>${k !== 'silver' ? '<span class="spk s1" aria-hidden="true">✦</span><span class="spk s2" aria-hidden="true">✦</span>' : ''}</span>`;
-const exOpen = lv => !!storySave[lv].cleared;
+// EXステージ：カギを2つ（たからばこのカギ／超強敵ステージか休けいのカギ）そろえると解放
+const EX_KEY = { t: 'たからばこのカギ', b: '超強敵・休けいのカギ' };
+const exKeys = lv => (storySave[lv].exKeys = storySave[lv].exKeys || {});
+const exKeyCount = lv => ['t', 'b'].filter(k => exKeys(lv)[k]).length;
+const exOpen = lv => exKeyCount(lv) >= 2;
+const exNeedKey = k => NET.role !== 'guest' && !exKeys(COOP_LV)[k];
+function exGetKey(k) {
+  if (!exNeedKey(k)) return false;
+  exKeys(COOP_LV)[k] = 1; saveStory();
+  if (typeof netToast === 'function') netToast(exOpen(COOP_LV) ? 'EXのカギがそろった！ EXステージが解放された！' : `EXのカギを手に入れた！（${exKeyCount(COOP_LV)} / 2）`, 4500);
+  return true;
+}
 const exUnlocked = () => exOpen(COOP_LV) || DBG.on;
 const medalHtml = (m, extra = '') => { const k = bestMedal(m); return k ? medalOne(k, extra) : `<span class="medal off${extra}" aria-label="メダルなし"></span>`; };
 function saveStory() { try { localStorage.setItem(STORY_KEY, JSON.stringify(storySave)); } catch (_e) {} }

@@ -11,8 +11,10 @@ const NODE_T = {
   rest: { mark: '休', name: '休けい', desc: 'ひと休み。「休む」でHPを回復するか、カード・ランナーの強化を1つアップグレードできる' },
   treasure: { mark: '宝', name: 'たからばこ', desc: 'ステージなしで、ごほうびを1枚えらべる' },
   event: { mark: '？', name: 'ふしぎ', desc: '何が起こるかはお楽しみ。いいことがあるかも' },
-  boss: { mark: '王', name: 'ボス', desc: '消しゴム大王との対決！' }
+  boss: { mark: '王', name: 'ボス', desc: '消しゴム大王との対決！' },
+  super: { mark: '超', name: '超強敵ステージ', desc: '強敵よりさらに強い大王。クリアするとEXステージのカギ' }
 };
+const isBattle = t => t === 'stage' || t === 'elite' || t === 'super' || t === 'boss'; // たたかうマス
 const BOSS_FLOORS = [7, 14];
 const TREASURE_FLOOR = 4; // 5階はぜんぶたからばこ（どの道を通っても、かならず1回はたからばこに入れる）
 const MAP_ROWS = 4;
@@ -34,10 +36,10 @@ function assignTemplates(floors, from, rnd) {
   const used = {};
   for (const row of floors) for (const n of row) if (n.f < from && n.tpl != null && n.type !== 'boss') used[n.tpl] = (used[n.tpl] || 0) + 1;
   for (let f = from; f < floors.length; f++) {
-    const prevNodes = (floors[f - 1] || []).filter(n => n.type === 'stage' || n.type === 'elite');
+    const prevNodes = (floors[f - 1] || []).filter(n => n.type === 'stage' || n.type === 'elite' || n.type === 'super');
     const prev = new Set(prevNodes.map(n => n.tpl)), prevBg = new Set(prevNodes.map(n => (STORY[n.tpl] || {}).bg)), here = new Set(), hereBg = new Set();
     for (const n of floors[f]) {
-      if (n.type !== 'stage' && n.type !== 'elite') continue;
+      if (n.type !== 'stage' && n.type !== 'elite' && n.type !== 'super') continue;
       const score = t => (used[t] || 0) * 3 + (here.has(t) ? 20 : 0) + (prev.has(t) ? 8 : 0) + (hereBg.has(STORY[t].bg) ? 3 : 0) + (prevBg.has(STORY[t].bg) ? 1.5 : 0) + rnd() * 2;
       let best = MAP_TPLS[0], bs = Infinity;
       for (const t of MAP_TPLS) { const s = score(t); if (s < bs) { bs = s; best = t; } }
@@ -56,6 +58,10 @@ function genRunMap() {
       const type = mapNodeType(f, rnd);
       return { id: id++, f, y, type, tpl: type === 'boss' ? f : null, next: [] };
     }));
+  }
+  { // 超強敵ステージ（EXのカギ）：9〜13階のステージ・強敵のどれか1〜2個
+    const cand = floors.slice(8, 13).flat().filter(n => n.type === 'stage' || n.type === 'elite');
+    shuffle(cand).slice(0, 1 + (rnd() < 0.5 ? 1 : 0)).forEach(n => { n.type = 'super'; });
   }
   assignTemplates(floors, 0, rnd);
   // となりの階どうしを、線が交差しないようにつなぐ（どのマスにも行ける道がある）
@@ -94,13 +100,14 @@ function mapReachable(run) {
 // マスのステージ（強敵は大王が強く、関門が1つ多く、時間が少し長い）
 function makeNodePage(nd) {
   if (nd.type === 'boss') return STORY[nd.f];
-  const diff = STORY[Math.min(STORY.length - 1, nd.f)], base = STORY[nd.tpl] || diff, elite = nd.type === 'elite'; // 前の版のセーブでステージが決まっていないマスは、その階のステージにする
+  const diff = STORY[Math.min(STORY.length - 1, nd.f)], base = STORY[nd.tpl] || diff, sup = nd.type === 'super', elite = nd.type === 'elite' || sup; // 前の版のセーブでステージが決まっていないマスは、その階のステージにする
   const kinds = base.kinds.slice();
   if (elite) kinds.splice(Math.ceil(kinds.length / 2), 0, kinds[0]);
+  if (sup) { kinds.splice(Math.ceil(kinds.length / 3), 0, kinds[1] || kinds[0]); kinds.push(kinds[2] || kinds[0]); } // 超強敵：関門がさらに2つ多い
   return Object.assign({}, base, {
-    name: elite ? `強敵！${base.name}` : base.name, kinds, elite,
-    cpu: Math.round(diff.cpu * (elite ? 1.25 : 1) * 100) / 100, pool: Math.min(1, diff.pool + (elite ? 0.1 : 0)),
-    time: base.time + (elite ? 15 : 0),
+    name: sup ? `超強敵！${base.name}` : elite ? `強敵！${base.name}` : base.name, kinds, elite, superElite: sup,
+    cpu: Math.round(diff.cpu * (sup ? 1.5 : elite ? 1.25 : 1) * 100) / 100, pool: Math.min(1, diff.pool + (sup ? 0.2 : elite ? 0.1 : 0)),
+    time: base.time + (sup ? 30 : elite ? 15 : 0),
     story: nd.f === 0 ? OPENING : base.story, // 1階は冒険のはじまりのお話（ほかのステージのお話は、どの階に出てもつながるように書いてある）
     erase: !!base.erase && nd.f >= 5 // 地面けし（嵐）は6階から
   });
@@ -119,13 +126,15 @@ function runStageCleared(sv) {
   const nd = mapNode(run, run.cur) || (run.map.floors[storyIdx] || [])[0];
   if (storyIdx >= STORY.length - 1) {
     completeNode(run, nd);
-    sv.lastPath = run.path.map(id => { const n = mapNode(run, id); return n.type === 'stage' || n.type === 'elite' || n.type === 'boss' ? makeNodePage(n).name : NODE_T[n.type].name; });
+    sv.lastPath = run.path.map(id => { const n = mapNode(run, id); return isBattle(n.type) ? makeNodePage(n).name : NODE_T[n.type].name; });
     sv.run = null; sv.cleared = true; return;
   }
   // HP を引きつぐ。ボスをたおしたら満タンにもどる
   run.hp = nd.type === 'boss' ? null : Math.max(1, Math.ceil(P.hp)); run.hpMax = P.maxHp; run.bossHeal = nd.type === 'boss';
   completeNode(run, nd); run.curse = null; // のろいは、ステージを1つクリアするまで
-  run.pending = true; run.choices = null; run.rwKind = nd.type === 'elite' ? 'elite' : 'stage'; run.extra = nd.type === 'elite' ? 1 : 0;
+  const big = nd.type === 'elite' || nd.type === 'super';
+  run.pending = true; run.choices = null; run.rwKind = big ? 'elite' : 'stage'; run.extra = big ? 1 : 0; run.superWin = nd.type === 'super';
+  if (nd.type === 'super') exGetKey('b'); // 超強敵をたおした：EXのカギ
   run.rwArea = rewardAreaOf(nd); // ステージによって、出やすいごほうびがちがう
 }
 // 休けい：アップグレードできるもの（カード・ランナーの強化）から3つ
@@ -133,7 +142,7 @@ function rollUpgrades(run) {
   const shuffle = a => { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
   const ups = run.deck.filter(id => CARD_UP[id] && ((run.ups || {})[id] || 0) < UP_MAX).map(id => ({ type: 'up', id, lv: ((run.ups || {})[id] || 0) + 1 }));
   const rups = Object.keys(RUN_UP).filter(k => run.boosts[k] && run.boosts[k] < 3).map(k => ({ type: 'rup', id: k, lv: Math.min(3, run.boosts[k]) + 1 }));
-  return [{ type: 'heal', pct: 0.3 }].concat(shuffle(ups.concat(rups)).slice(0, 2)); // 休む（HP回復）＋アップグレード2つ
+  return [{ type: 'heal', pct: 0.3 }].concat(shuffle(ups.concat(rups)).slice(0, 2), exNeedKey('b') ? [{ type: 'key', k: 'b' }] : []); // 休む（HP回復）＋アップグレード2つ（＋休まずにEXのカギ）
 }
 
 // 記録（ランク・メダル）を残す場所：ステージごと。強敵は別の記録（ステージ番号 + 100）。EX は EX_IDX
@@ -141,6 +150,6 @@ function recKey() {
   if (storyIdx === EX_IDX) return EX_IDX;
   const nd = nodePage && nodePage.f === storyIdx ? nodePage.nd : null;
   if (!nd || nd.type === 'boss') return storyIdx;
-  return nd.tpl + (nd.type === 'elite' ? 100 : 0);
+  return nd.tpl + (nd.type === 'elite' ? 100 : nd.type === 'super' ? 200 : 0);
 }
-const nodeRecKey = nd => nd.type === 'boss' ? nd.f : nd.tpl + (nd.type === 'elite' ? 100 : 0);
+const nodeRecKey = nd => nd.type === 'boss' ? nd.f : nd.tpl + (nd.type === 'elite' ? 100 : nd.type === 'super' ? 200 : 0);

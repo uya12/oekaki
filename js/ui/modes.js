@@ -111,12 +111,12 @@ function mapHtml(run) {
   }
   const nodes = mapNodes(run).map(n => {
     const t = NODE_T[n.type], cls = ['mnode', n.type, path.includes(n.id) ? 'done' : '', reach.includes(n.id) ? 'reach' : '', n.id === mapSel ? 'sel' : '', n.id === run.cur ? 'cur' : '', n.f < run.stage && !path.includes(n.id) ? 'past' : ''];
-    const battle = n.type === 'stage' || n.type === 'elite' || n.type === 'boss';
+    const battle = isBattle(n.type);
     if (!battle) return `<button class="${cls.join(' ')}" data-id="${n.id}" style="left:${(n.y + 0.5) / MAP_ROWS * 100}%;top:${(L - 0.5 - n.f) / L * 100}%" title="${n.f + 1}階：${t.name}">${t.mark}</button>`;
     // たたかうマス：どこのエリアかわかるイラスト＋種類のしるし＋ステージの名前
     let st = null; try { st = makeNodePage(n); } catch (_e) {} // 古いセーブでも、マップが出ないことがないように
     const art = typeof areaKey === 'function' && typeof areaIconURL === 'function'; // 古いページと新しいファイルが混ざっても止まらないように
-    const ak = art ? areaKey(st) : null, nm = st ? st.name.replace(/^強敵！/, '') : t.name;
+    const ak = art ? areaKey(st) : null, nm = st ? st.name.replace(/^(超)?強敵！/, '') : t.name;
     return `<button class="${cls.concat('area').join(' ')}" data-id="${n.id}" style="left:${(n.y + 0.5) / MAP_ROWS * 100}%;top:${(L - 0.5 - n.f) / L * 100}%;background-image:url(${ak ? areaIconURL(ak) : ''})" title="${n.f + 1}階：${t.name}「${nm}」${ak ? `（${AREA_NAME[ak]}）` : ''}"><i class="mbadge mb-${n.type}">${t.mark}</i><span class="mname">${nm}</span></button>`;
   }).join('');
   const labels = STORY.map((_, f) => `<span class="mfl${f === run.stage ? ' now' : ''}" style="top:${(L - 0.5 - f) / L * 100}%">${f + 1}階</span>`).join('');
@@ -131,9 +131,10 @@ function nodeInfoHtml(nd) {
   const line = {
     stage: 'ランナーとサポーターが1つずつえらべる',
     elite: 'ランナーとサポーターが1つずつえらべる（2回）',
+    super: `ランナーとサポーターが1つずつえらべる（2回）${exNeedKey('b') ? '＋EXのカギ' : ''}`,
     boss: 'ランナーとサポーターが1つずつえらべる。アップグレードが出やすい。HPが満タンにもどる',
-    rest: 'HPを最大HPの30%回復するか、カード・ランナーの強化を1つアップグレード',
-    treasure: 'カード・強化の3つから1つえらべる',
+    rest: `HPを最大HPの30%回復するか、カード・ランナーの強化を1つアップグレード${exNeedKey('b') ? '（休まずにEXのカギをとることもできる）' : ''}`,
+    treasure: `カード・強化の3つから1つえらべる${exNeedKey('t') ? '（かわりにEXのカギをえらぶこともできる）' : ''}`,
     event: '何が起こるかはお楽しみ（いいことも、わるいことも）'
   }[nd.type] || '';
   return `<p class="si-rwline">ごほうび：${line}</p>${area}`;
@@ -170,7 +171,7 @@ function showStory() {
   {
     const ok = exUnlocked(), eb = document.createElement('button');
     eb.className = 'page-card ex' + (ok ? '' : ' locked') + (storySel === EX_IDX ? ' sel' : '');
-    eb.innerHTML = `<span class="pc-no">EXステージ</span><span class="pc-name hand">${ok ? EX_PAGE.name : '？？？'}</span><span class="pc-rank">${ok ? (sv.ranks[EX_IDX] ? 'ベスト ランク' + sv.ranks[EX_IDX] : '未クリア') : '15階の冒険を最後までクリアすると解放'}</span>${ok ? `<span class="pc-medal">${medalHtml(sv.medals && sv.medals[EX_IDX])}</span>` : ''}`;
+    eb.innerHTML = `<span class="pc-no">EXステージ</span><span class="pc-name hand">${ok ? EX_PAGE.name : '？？？'}</span><span class="pc-rank">${ok ? (sv.ranks[EX_IDX] ? 'ベスト ランク' + sv.ranks[EX_IDX] : '未クリア') : `EXのカギ ${exKeyCount(COOP_LV)} / 2：たからばこで1つ、超強敵ステージか休けいで1つ`}</span>${ok ? `<span class="pc-medal">${medalHtml(sv.medals && sv.medals[EX_IDX])}</span>` : ''}`;
     eb.addEventListener('click', () => { storySel = storySel === EX_IDX ? 0 : EX_IDX; showStory(); });
     grid.appendChild(eb);
   }
@@ -178,7 +179,7 @@ function showStory() {
   if (storySel === EX_IDX) {
     const st = EX_PAGE, locked = !exUnlocked();
     intro.innerHTML = `<div class="si-head"><span class="si-page">EXステージ</span><h3 class="hand">${locked ? '？？？' : st.name}</h3></div>
-      <p class="si-rwline">${locked ? '15階の冒険を最後までクリアすると解放' : 'ごほうび：なし（クリアするとランクとメダルが記録される）'}</p>
+      <p class="si-rwline">${locked ? `EXのカギ ${exKeyCount(COOP_LV)} / 2：たからばこで1つ、超強敵ステージか休けいで1つ` : 'ごほうび：なし（クリアするとランクとメダルが記録される）'}</p>
       <div class="si-btns"><button class="btn blue big" id="btnStoryGo"${locked ? ' disabled' : ''}>${locked ? 'ロック中' : 'EXステージに挑戦'}</button><button class="btn" id="btnStoryBack">冒険にもどる</button></div>`;
     $('#btnStoryGo').addEventListener('click', () => { if (exUnlocked()) startStoryPage(EX_IDX); });
     $('#btnStoryBack').addEventListener('click', () => { storySel = 0; showStory(); });
@@ -192,11 +193,11 @@ function showStory() {
     $('#btnRunNew').addEventListener('click', () => { newRun(); mapSel = null; SFX.pick(); showStory(); });
   } else {
     const nd = mapNode(run, mapSel), t = nd && NODE_T[nd.type], canGo = nd && reach.includes(nd.id) && !run.pending;
-    const name = !nd ? '' : (nd.type === 'stage' || nd.type === 'elite' || nd.type === 'boss') ? makeNodePage(nd).name : t.name;
+    const name = !nd ? '' : isBattle(nd.type) ? makeNodePage(nd).name : t.name;
     const go = run.pending ? '<button class="btn blue big" id="btnRunGo">ごほうびをえらぶ</button>'
       : canGo ? `<button class="btn blue big" id="btnRunGo">${run.cur === nd.id ? 'もう一度挑戦する' : `${nd.f + 1}階「${name}」へ進む`}</button>`
       : `<button class="btn big" disabled>${nd && nd.f < run.stage ? 'もう通りすぎたマス' : 'ここへはまだ進めない'}</button>`;
-    let ak = null; try { ak = nd && typeof areaIconURL === 'function' && (nd.type === 'stage' || nd.type === 'elite' || nd.type === 'boss') ? areaKey(makeNodePage(nd)) : null; } catch (_e) {} // どこのエリアか
+    let ak = null; try { ak = nd && typeof areaIconURL === 'function' && isBattle(nd.type) ? areaKey(makeNodePage(nd)) : null; } catch (_e) {} // どこのエリアか
     intro.innerHTML = `<div class="si-head">${ak ? `<i class="si-area" style="background-image:url(${areaIconURL(ak)})" title="${AREA_NAME[ak]}"></i>` : ''}<span class="si-page">${nd ? `${nd.f + 1}階 / ${STORY.length}　${t.name}${ak ? `・${AREA_NAME[ak]}` : ''}` : ''}</span><h3 class="hand">${name}</h3></div>
       <div class="si-btns">${go}<button class="btn" id="btnRunNew">最初からやり直す</button></div>
       ${nd ? nodeInfoHtml(nd) : ''}
@@ -218,7 +219,7 @@ function showStory() {
 function enterNode(nd) {
   const run = curRun(); if (!run || !nd || !mapReachable(run).includes(nd.id)) return;
   SFX.pick();
-  if (nd.type === 'stage' || nd.type === 'elite' || nd.type === 'boss') { run.cur = nd.id; saveStory(); setNodePage(nd); startStoryPage(nd.f); return; }
+  if (isBattle(nd.type)) { run.cur = nd.id; saveStory(); setNodePage(nd); startStoryPage(nd.f); return; }
   completeNode(run, nd); run.pending = true; run.choices = null; run.extra = 0; run.evt = null;
   if (nd.type === 'rest') { run.choices = rollUpgrades(run); run.rwKind = 'rest'; }
   else if (nd.type === 'treasure') run.rwKind = 'treasure';
@@ -237,12 +238,12 @@ function showReward() {
   if (!guest) { NET.rwHov = null; NET.rwPick = null; NET.rwSug = null; }
   const kind = run.rwKind || 'stage', evt = run.evt, left = (run.extra || 0) + 1;
   if (evt && evt.id === 'target') { evt.id = 'rope'; evt.title = EVENTS.rope.title; if (evt.playing) evt.playing = 'rope'; } // 前の版の「えんぴつのまと」は大なわとびに
-  if (!guest && kind !== 'event' && (!run.choices || !run.choices.length)) { run.duo = kind === 'stage' || kind === 'elite'; run.picks = null; run.choices = kind === 'rest' ? rollUpgrades(run) : run.duo ? rollRewardsDuo(run, run.rwArea) : rollRewards(run); saveStory(); }
+  if (!guest && kind !== 'event' && (!run.choices || !run.choices.length)) { run.duo = kind === 'stage' || kind === 'elite'; run.picks = null; run.choices = kind === 'rest' ? rollUpgrades(run) : run.duo ? rollRewardsDuo(run, run.rwArea) : rollRewards(run); if (kind === 'treasure' && exNeedKey('t')) run.choices.push({ type: 'key', k: 't' }); saveStory(); } // たからばこ：かわりにEXのカギをえらべる
   const duo = !!(run.duo && run.choices && run.choices.length && run.choices[0].side); // 戦闘後：ランナーとサポーターが1つずつ
   run.choices = kind === 'event' ? [] : run.choices || [];
   const online = rewardOnline();
   $('#rewardTitle').textContent = evt ? `ふしぎ：${evt.title}` : kind === 'rest' ? '休けい：休むか、アップグレードを1つえらぼう' : kind === 'treasure' ? `たからばこ！ ごほうびをえらぼう${left > 1 ? `（あと${left}枚）` : ''}`
-    : duo ? (kind === 'elite' ? `強敵をたおした！ 2人で1つずつえらぼう（あと${left}回）` : `${run.stage}階 クリア！ 2人で1つずつごほうびをえらぼう`)
+    : duo ? (kind === 'elite' ? `${run.superWin ? '超強敵' : '強敵'}をたおした！ 2人で1つずつえらぼう（あと${left}回）` : `${run.stage}階 クリア！ 2人で1つずつごほうびをえらぼう`)
     : kind === 'elite' ? `強敵をたおした！ ごほうびをえらぼう（あと${left}枚）` : `${run.stage}階 クリア！ ごほうびを1枚えらぼう`;
   const RA = duo && REWARD_AREA[run.rwArea]; // このステージで出やすいごほうび
   $('#rewardSub').textContent = RA ? `★ ${RA.name}の${RA.label}：${RA.desc}が出やすい` : (evt && kind !== 'event' ? evt.text : '');
@@ -283,6 +284,12 @@ function showReward() {
   run.choices.forEach((r, ci) => {
     const b = document.createElement('button');
     const isCard = r.type === 'card', isUp = r.type === 'up', isRup = r.type === 'rup', isHeal = r.type === 'heal', bo = (r.type === 'boost' || isRup) && BOOSTS[r.id];
+    if (r.type === 'key') { // EXのカギ（ほかのごほうびのかわりに）
+      b.className = 'rw-pick key';
+      b.innerHTML = `<span class="rw-kind">EXステージのカギ</span><span class="rw-mark">🔑</span><span class="rw-name hand">${EX_KEY[r.k]}</span><span class="rw-desc">${kind === 'rest' ? '休まずに、カギをとる。' : 'ほかのごほうびのかわりに、カギをとる。'}2つそろうとEXステージが解放（いま ${exKeyCount(COOP_LV)} / 2）</span>`;
+      if (!guest) { b.addEventListener('pointerenter', () => rewardHover(ci)); b.addEventListener('focus', () => rewardHover(ci)); b.addEventListener('click', () => rewardPick(ci)); } else b.addEventListener('click', () => rewardSuggest(ci));
+      row.appendChild(b); return;
+    }
     b.className = 'rw-pick ' + (isHeal ? 'runner heal' : isCard ? 'card' : isUp ? 'up' : isRup ? 'runner rup' : bo.who);
     let desc;
     if (isHeal) { const m = runMaxHp(run), now = runHpNow(run), nx = Math.min(m, Math.round(now + m * r.pct)); desc = now >= m ? `HPを最大HPの${Math.round(r.pct * 100)}%回復（いまは満タン）` : `HPを最大HPの${Math.round(r.pct * 100)}%回復：HP ${now} → <b>${nx}</b> / ${m}`; }
@@ -378,13 +385,13 @@ function showEnding() {
   const sv = storySave[COOP_LV];
   const spr = storyStrokes ? bigSprite(storyStrokes, 220, 180) : null;
   $('#endingChar').src = (spr || storyCH.spr).toDataURL();
-  $('#endingText').innerHTML = ENDING.map(t => `<p>${t}</p>`).join('') + `<p class="end-lv">大王の強さ「${CPU_LV[COOP_LV].name}」で全${STORY.length}階の冒険をクリア！ EXステージが解放されました</p>`;
+  $('#endingText').innerHTML = ENDING.map(t => `<p>${t}</p>`).join('') + `<p class="end-lv">大王の強さ「${CPU_LV[COOP_LV].name}」で全${STORY.length}階の冒険をクリア！${exOpen(COOP_LV) ? ' EXステージに挑戦できます' : ` EXのカギ ${exKeyCount(COOP_LV)} / 2（そろうとEXステージが解放）`}</p>`;
   const names = sv.lastPath || [];
   $('#endingRanks').innerHTML = names.map((nm, i) => `<span class="hchip a"><b>${i + 1}階</b><small>${nm}</small></span>`).join('');
   show('scr-ending'); SFX.win();
 }
 $('#btnStoryRedraw').addEventListener('click', () => { setSetupTexts(); show('scr-draw'); });
-$('#btnDbgUnlock').addEventListener('click', () => { storySave[COOP_LV].cleared = true; saveStory(); showStory(); });
+$('#btnDbgUnlock').addEventListener('click', () => { storySave[COOP_LV].exKeys = { t: 1, b: 1 }; saveStory(); showStory(); });
 $('#btnDbgMedal').addEventListener('click', () => { const sv = storySave[COOP_LV]; sv.open = STORY.length; STORY.forEach((_, i) => { sv.ranks[i] = 'S'; sv.medals[i] = { silver: true, gold: true, rainbow: true }; }); saveStory(); showStory(); });
 let dbgResetArm = 0;
 $('#btnDbgReset').addEventListener('click', e => {
