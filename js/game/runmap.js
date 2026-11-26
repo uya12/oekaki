@@ -35,7 +35,7 @@ function assignTemplates(floors, from, rnd) {
   for (const row of floors) for (const n of row) if (n.f < from && n.tpl != null && n.type !== 'boss') used[n.tpl] = (used[n.tpl] || 0) + 1;
   for (let f = from; f < floors.length; f++) {
     const prevNodes = (floors[f - 1] || []).filter(n => n.type === 'stage' || n.type === 'elite');
-    const prev = new Set(prevNodes.map(n => n.tpl)), prevBg = new Set(prevNodes.map(n => STORY[n.tpl].bg)), here = new Set(), hereBg = new Set();
+    const prev = new Set(prevNodes.map(n => n.tpl)), prevBg = new Set(prevNodes.map(n => (STORY[n.tpl] || {}).bg)), here = new Set(), hereBg = new Set();
     for (const n of floors[f]) {
       if (n.type !== 'stage' && n.type !== 'elite') continue;
       const score = t => (used[t] || 0) * 3 + (here.has(t) ? 20 : 0) + (prev.has(t) ? 8 : 0) + (hereBg.has(STORY[t].bg) ? 3 : 0) + (prevBg.has(STORY[t].bg) ? 1.5 : 0) + rnd() * 2;
@@ -94,7 +94,7 @@ function mapReachable(run) {
 // マスのステージ（強敵は大王が強く、関門が1つ多く、時間が少し長い）
 function makeNodePage(nd) {
   if (nd.type === 'boss') return STORY[nd.f];
-  const base = STORY[nd.tpl], diff = STORY[nd.f], elite = nd.type === 'elite';
+  const diff = STORY[Math.min(STORY.length - 1, nd.f)], base = STORY[nd.tpl] || diff, elite = nd.type === 'elite'; // 前の版のセーブでステージが決まっていないマスは、その階のステージにする
   const kinds = base.kinds.slice();
   if (elite) kinds.splice(Math.ceil(kinds.length / 2), 0, kinds[0]);
   return Object.assign({}, base, {

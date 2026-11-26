@@ -114,13 +114,15 @@ function mapHtml(run) {
     const battle = n.type === 'stage' || n.type === 'elite' || n.type === 'boss';
     if (!battle) return `<button class="${cls.join(' ')}" data-id="${n.id}" style="left:${(n.y + 0.5) / MAP_ROWS * 100}%;top:${(L - 0.5 - n.f) / L * 100}%" title="${n.f + 1}階：${t.name}">${t.mark}</button>`;
     // たたかうマス：どこのエリアかわかるイラスト＋種類のしるし＋ステージの名前
-    const st = makeNodePage(n), ak = areaKey(st), nm = st.name.replace(/^強敵！/, '');
+    let st = null; try { st = makeNodePage(n); } catch (_e) {} // 古いセーブでも、マップが出ないことがないように
+    const art = typeof areaKey === 'function' && typeof areaIconURL === 'function'; // 古いページと新しいファイルが混ざっても止まらないように
+    const ak = art ? areaKey(st) : null, nm = st ? st.name.replace(/^強敵！/, '') : t.name;
     return `<button class="${cls.concat('area').join(' ')}" data-id="${n.id}" style="left:${(n.y + 0.5) / MAP_ROWS * 100}%;top:${(L - 0.5 - n.f) / L * 100}%;background-image:url(${ak ? areaIconURL(ak) : ''})" title="${n.f + 1}階：${t.name}「${nm}」${ak ? `（${AREA_NAME[ak]}）` : ''}"><i class="mbadge mb-${n.type}">${t.mark}</i><span class="mname">${nm}</span></button>`;
   }).join('');
   const labels = STORY.map((_, f) => `<span class="mfl${f === run.stage ? ' now' : ''}" style="top:${(L - 0.5 - f) / L * 100}%">${f + 1}階</span>`).join('');
   return `<div class="run-map"><div class="rm-scroll"><div class="rm-in"><svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">${lines}</svg>${nodes}${labels}</div></div>
     <div class="rm-legend">${Object.keys(NODE_T).map(k => `<span><i class="mnode ${k}">${NODE_T[k].mark}</i>${NODE_T[k].name}</span>`).join('')}</div>
-    <div class="rm-legend rm-areas">${Object.keys(AREA_NAME).map(k => `<span><i class="ai" style="background-image:url(${areaIconURL(k)})"></i>${AREA_NAME[k]}</span>`).join('')}</div></div>`;
+    <div class="rm-legend rm-areas">${(typeof AREA_NAME === 'object' ? Object.keys(AREA_NAME) : []).map(k => `<span><i class="ai" style="background-image:url(${areaIconURL(k)})"></i>${AREA_NAME[k]}</span>`).join('')}</div></div>`;
 }
 // マスの説明（ステージのマスは、関門・時間・ヒントも）
 function nodeInfoHtml(nd) {
@@ -191,7 +193,7 @@ function showStory() {
     const go = run.pending ? '<button class="btn blue big" id="btnRunGo">ごほうびをえらぶ</button>'
       : canGo ? `<button class="btn blue big" id="btnRunGo">${run.cur === nd.id ? 'もう一度挑戦する' : `${nd.f + 1}階「${name}」へ進む`}</button>`
       : `<button class="btn big" disabled>${nd && nd.f < run.stage ? 'もう通りすぎたマス' : 'ここへはまだ進めない'}</button>`;
-    const ak = nd && (nd.type === 'stage' || nd.type === 'elite' || nd.type === 'boss') ? areaKey(makeNodePage(nd)) : null; // どこのエリアか
+    let ak = null; try { ak = nd && typeof areaIconURL === 'function' && (nd.type === 'stage' || nd.type === 'elite' || nd.type === 'boss') ? areaKey(makeNodePage(nd)) : null; } catch (_e) {} // どこのエリアか
     intro.innerHTML = `<div class="si-head">${ak ? `<i class="si-area" style="background-image:url(${areaIconURL(ak)})" title="${AREA_NAME[ak]}"></i>` : ''}<span class="si-page">${nd ? `${nd.f + 1}階 / ${STORY.length}　${t.name}${ak ? `・${AREA_NAME[ak]}` : ''}` : ''}</span><h3 class="hand">${name}</h3></div>
       <div class="si-btns">${go}<button class="btn" id="btnRunNew">最初からやり直す</button></div>
       ${nd ? nodeInfoHtml(nd) : ''}
