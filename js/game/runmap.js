@@ -126,6 +126,7 @@ function runStageCleared(sv) {
   run.hp = nd.type === 'boss' ? null : Math.max(1, Math.ceil(P.hp)); run.hpMax = P.maxHp; run.bossHeal = nd.type === 'boss';
   completeNode(run, nd); run.curse = null; // のろいは、ステージを1つクリアするまで
   run.pending = true; run.choices = null; run.rwKind = nd.type === 'elite' ? 'elite' : 'stage'; run.extra = nd.type === 'elite' ? 1 : 0;
+  run.rwArea = rewardAreaOf(nd); // ステージによって、出やすいごほうびがちがう
 }
 // 休けい：アップグレードできるもの（カード・ランナーの強化）から3つ
 function rollUpgrades(run) {

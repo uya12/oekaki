@@ -1209,3 +1209,9 @@ body.mobile.land #scr-story .rm-in .mnode.boss{width:clamp(30px,20cqw,54px);heig
 body.mobile.land .mnode .mbadge{width:34%;height:34%;min-width:13px;min-height:13px;font-size:8.5px;top:-3px;right:-4px}
 .si-area{display:inline-block;flex:none;width:40px;height:40px;border-radius:50%;border:2px solid var(--ink);background-size:cover;background-position:center;align-self:center}
 body.mobile.land .si-area{width:26px;height:26px;border-width:1.5px}
+
+/* ステージによって出やすいごほうび */
+.rw-area{position:absolute;top:6px;left:8px;font-size:11px;font-weight:900;color:#8a5a00;background:#fff3c4;border-radius:999px;padding:0 7px;line-height:1.6}
+.si-reward{font-weight:700;color:#2a9d5c;margin:4px 0}
+body.mobile.land .rw-area{font-size:9px;top:3px;left:4px;padding:0 5px}
+.rw-area{top:-9px;left:10px;border:1.5px solid #e0a100;z-index:1} body.mobile.land .rw-area{top:-7px}

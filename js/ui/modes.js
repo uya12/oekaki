@@ -131,7 +131,7 @@ function nodeInfoHtml(nd) {
   const st = makeNodePage(nd), counts = {}; st.kinds.forEach(k => { counts[k] = (counts[k] || 0) + 1; });
   const meta = Object.entries(counts).map(([k, n]) => `${KIND_JP[k]}×${n}`).join('・') + (st.cave ? '・低い天井' : '') + (st.erase ? '・地面けし' : '') + (st.boss ? '・ボス戦' : '');
   return `<div class="si-text">${nd.type === 'elite' ? `<p class="si-elite">${t.desc}</p>` : ''}${st.story.map(x => `<p>${x}</p>`).join('')}</div>
-    <p class="si-meta">関門：${meta}　制限時間：${st.time}秒　大王の強さ：${CPU_LV[COOP_LV].name}${nd.type === 'elite' ? '（強敵）' : ''}　ベスト：${(sv => (sv.ranks[nodeRecKey(nd)] ? 'ランク' + sv.ranks[nodeRecKey(nd)] : 'まだ記録なし'))(storySave[COOP_LV])}</p>${themeOf(st) ? `<p class="si-theme">ステージの特徴「${THEME[themeOf(st)].name}」：${THEME[themeOf(st)].desc}</p>` : ''}<p class="si-hint">ヒント：${st.hint}</p>`;
+    <p class="si-meta">関門：${meta}　制限時間：${st.time}秒　大王の強さ：${CPU_LV[COOP_LV].name}${nd.type === 'elite' ? '（強敵）' : ''}　ベスト：${(sv => (sv.ranks[nodeRecKey(nd)] ? 'ランク' + sv.ranks[nodeRecKey(nd)] : 'まだ記録なし'))(storySave[COOP_LV])}</p>${(A => A ? `<p class="si-reward">ごほうび：${A.label}（${A.desc}が出やすい）</p>` : '')(REWARD_AREA[rewardAreaOf(nd)])}${themeOf(st) ? `<p class="si-theme">ステージの特徴「${THEME[themeOf(st)].name}」：${THEME[themeOf(st)].desc}</p>` : ''}<p class="si-hint">ヒント：${st.hint}</p>`;
 }
 /* マップは大きく描いて、たてにスクロールして見る（ホイール・ドラッグでも動かせる） */
 let mapScroll = { stage: -1, x: 0 };
@@ -234,15 +234,16 @@ function showReward() {
   if (!guest) { NET.rwHov = null; NET.rwPick = null; NET.rwSug = null; }
   const kind = run.rwKind || 'stage', evt = run.evt, left = (run.extra || 0) + 1;
   if (evt && evt.id === 'target') { evt.id = 'rope'; evt.title = EVENTS.rope.title; if (evt.playing) evt.playing = 'rope'; } // 前の版の「えんぴつのまと」は大なわとびに
-  if (!guest && kind !== 'event' && (!run.choices || !run.choices.length)) { run.duo = kind === 'stage' || kind === 'elite'; run.picks = null; run.choices = kind === 'rest' ? rollUpgrades(run) : run.duo ? rollRewardsDuo(run) : rollRewards(run); saveStory(); }
+  if (!guest && kind !== 'event' && (!run.choices || !run.choices.length)) { run.duo = kind === 'stage' || kind === 'elite'; run.picks = null; run.choices = kind === 'rest' ? rollUpgrades(run) : run.duo ? rollRewardsDuo(run, run.rwArea) : rollRewards(run); saveStory(); }
   const duo = !!(run.duo && run.choices && run.choices.length && run.choices[0].side); // 戦闘後：ランナーとサポーターが1つずつ
   run.choices = kind === 'event' ? [] : run.choices || [];
   const online = rewardOnline();
   $('#rewardTitle').textContent = evt ? `ふしぎ：${evt.title}` : kind === 'rest' ? '休けい：休むか、アップグレードを1つえらぼう' : kind === 'treasure' ? `たからばこ！ ごほうびをえらぼう${left > 1 ? `（あと${left}枚）` : ''}`
     : duo ? (kind === 'elite' ? `強敵をたおした！ 2人で1つずつえらぼう（あと${left}回）` : `${run.stage}階 クリア！ 2人で1つずつごほうびをえらぼう`)
     : kind === 'elite' ? `強敵をたおした！ ごほうびをえらぼう（あと${left}枚）` : `${run.stage}階 クリア！ ごほうびを1枚えらぼう`;
-  $('#rewardSub').textContent = duo ? (online ? `あなたは${duoMySide() === 'r' ? 'P1 ランナー' : 'P2 サポーター'}：自分の列から1つえらぼう。2人ともえらんだら決定です（もう一度押すと取り消し）` : 'P1 ランナーは左、P2 サポーターは右から1つずつ。2人ともえらんだら決定です（もう一度押すと取り消し）')
-    : (evt && kind !== 'event' ? evt.text + '　' : '') + (kind === 'event' ? '' : 'えらんだら、マップで次の道をえらぼう。') + (kind === 'event' ? '' : guest ? '　カードをタップすると、ホストに「これがいい！」と提案できます（決めるのはホスト）' : online ? '　サポーターの提案には「P2のおすすめ」がつきます。えらんでいるカードは相手の画面にも見えます' : '');
+  const RA = duo && REWARD_AREA[run.rwArea]; // このステージで出やすいごほうび
+  $('#rewardSub').textContent = (RA ? `${RA.name}の${RA.label}：${RA.desc}が出やすい（★のしるし）。` : '') + (duo ? (online ? `あなたは${duoMySide() === 'r' ? 'P1 ランナー' : 'P2 サポーター'}：自分の列から1つえらぼう。2人ともえらんだら決定です（もう一度押すと取り消し）` : 'P1 ランナーは左、P2 サポーターは右から1つずつ。2人ともえらんだら決定です（もう一度押すと取り消し）')
+    : (evt && kind !== 'event' ? evt.text + '　' : '') + (kind === 'event' ? '' : 'えらんだら、マップで次の道をえらぼう。') + (kind === 'event' ? '' : guest ? '　カードをタップすると、ホストに「これがいい！」と提案できます（決めるのはホスト）' : online ? '　サポーターの提案には「P2のおすすめ」がつきます。えらんでいるカードは相手の画面にも見えます' : ''));
   const row = $('#rewardRow'); row.innerHTML = ''; row.classList.toggle('watch', guest);
   row.classList.toggle('duo', duo);
   const sideRow = {};
@@ -290,7 +291,7 @@ function showReward() {
     b.innerHTML = `<span class="rw-kind">${isHeal ? 'ひと休み' : isCard ? 'サポーターのカード' : isUp ? 'カードのアップグレード' : isRup ? 'ランナーのアップグレード' : bo.who === 'runner' ? 'ランナーの強化' : 'サポーターの強化'}</span>
       ${isCard || isUp ? '<canvas width="208" height="128"></canvas>' : `<span class="rw-mark">${isHeal ? '♥' : bo.mark}</span>`}
       <span class="rw-name hand">${isHeal ? '休む' : isUp ? `${CARD[r.id].name} <b class="tlv">${stars(r.lv)}</b>` : isRup ? `${BOOSTS[r.id].name} <b class="tlv">${stars(r.lv - 1)}</b>` : rewardName(r)}</span>
-      <span class="rw-desc">${desc}</span>${online && !duo ? '<span class="rw-badges"><i class="p1">P1</i><i class="p2">P2のおすすめ</i></span>' : ''}`;
+      <span class="rw-desc">${desc}</span>${r.area && REWARD_AREA[r.area] ? `<span class="rw-area">★ ${REWARD_AREA[r.area].name}</span>` : ''}${online && !duo ? '<span class="rw-badges"><i class="p1">P1</i><i class="p2">P2のおすすめ</i></span>' : ''}`;
     if (isCard || isUp) iconCanvas(b.querySelector('canvas'), r.id, 104, 64);
     if (duo) { b.addEventListener('click', () => duoPick(ci)); sideRow[r.side].appendChild(b); return; } // 2人で1つずつ
     if (!guest) {

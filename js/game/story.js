@@ -167,7 +167,7 @@ const runLv = k => Math.min(3, runBoost(k));
 const runVal = k => RUN_UP[k].v[runLv(k)];
 // オンラインのゲストは、ホストから届いた冒険（NET.mrun）を使う
 const curRun = () => NET.role === 'guest' && NET.mrun !== undefined ? NET.mrun : storySave[COOP_LV].run;
-const runShare = run => run ? { stage: run.stage, deck: run.deck, ups: run.ups || {}, boosts: run.boosts, pending: run.pending, choices: run.choices, duo: !!run.duo, picks: run.picks || null, rwKind: run.rwKind, extra: run.extra || 0, evt: run.evt || null, curse: run.curse || null, maxHpDown: run.maxHpDown || 0, hp: runHpNow(run), hpMax: runMaxHp(run) } : null;
+const runShare = run => run ? { stage: run.stage, deck: run.deck, ups: run.ups || {}, boosts: run.boosts, pending: run.pending, choices: run.choices, duo: !!run.duo, rwArea: run.rwArea || null, picks: run.picks || null, rwKind: run.rwKind, extra: run.extra || 0, evt: run.evt || null, curse: run.curse || null, maxHpDown: run.maxHpDown || 0, hp: runHpNow(run), hpMax: runMaxHp(run) } : null;
 const inRun = () => COOP && storyIdx !== EX_IDX && !!curRun();
 const runBoost = k => inRun() ? (curRun().boosts[k] || 0) : 0;
 const runUps = () => inRun() ? (curRun().ups || {}) : {};
@@ -207,9 +207,28 @@ function runMaxHp(run) {
 }
 const runHpNow = run => { const m = runMaxHp(run); return run.hp == null ? m : clamp(Math.ceil(run.hp), 0, m); };
 function healRun(run, amount) { const m = runMaxHp(run), now = runHpNow(run), nx = Math.min(m, Math.round(now + amount)); run.hp = nx >= m ? null : nx; return Math.round(nx - now); }
+/* ステージ（エリア）ごとに、出やすいごほうびがちがう
+   cards：出やすいサポーターのカード（もう持っていればそのアップグレード）／boosts：出やすい強化 */
+const REWARD_AREA = {
+  meadow: { name: '草原', label: '走るごほうび', desc: 'スピード・ジャンプ・おいかぜなど、走るのを助けるもの', cards: ['s_speed', 's_wind', 's_jump', 's_long', 's_bounce', 's_bigpad'], boosts: ['spd', 'jump', 'stomp', 'energy'] },
+  forest: { name: '森', label: 'いやしのごほうび', desc: 'ハート・いやしの光など、HPを回復するもの', cards: ['s_heart', 's_miniheart', 's_regen', 's_lamp', 's_shield'], boosts: ['autoheal', 'heart', 'hp', 'regen'] },
+  canyon: { name: '谷', label: 'まもりのごほうび', desc: 'トゲよけ・かべ・バリアなど、身を守るもの', cards: ['s_spikeboots', 's_wall', 's_shield', 's_push', 's_stairs'], boosts: ['guard', 'inv', 'guts', 'hp'] },
+  cave: { name: '洞くつ', label: 'くらやみのごほうび', desc: 'ランタン・スロー・ストップなど、暗い場所で役立つもの', cards: ['s_lamp', 's_slow', 's_freeze', 's_shot', 's_clear'], boosts: ['inv', 'stomp', 'regen', 'uses'] },
+  icecave: { name: 'こおりの洞くつ', label: 'こおりのごほうび', desc: 'ランタン・ストップ・クッションなど、すべる場所で役立つもの', cards: ['s_lamp', 's_freeze', 's_slow', 's_cushion', 's_bridge'], boosts: ['guard', 'fall', 'regen', 'uses'] },
+  sky: { name: '空', label: 'そらのごほうび', desc: 'くもの橋・はね・ジャンプぐつなど、穴をこえるもの', cards: ['s_bridge', 's_cloud', 's_cushion', 's_feather', 's_double'], boosts: ['djump', 'jump', 'fall', 'energy'] },
+  castle: { name: '城', label: 'たたかいのごほうび', desc: 'ボム・かみなり・おたすけ弾など、敵をたおすもの', cards: ['s_bomb', 's_thunder', 's_shot', 's_freeze', 's_push'], boosts: ['stomp', 'guard', 'guts', 'uses'] },
+  mountain: { name: '雪山', label: 'のぼるごほうび', desc: 'かいだん・大きなジャンプ台など、高いところへ行くもの', cards: ['s_stairs', 's_bigpad', 's_jump', 's_double', 's_long'], boosts: ['jump', 'djump', 'spd', 'energy'] },
+  storm: { name: '嵐', label: 'あらしのごほうび', desc: 'のびる時計・大王おやすみなど、大王のじゃまに強いもの', cards: ['s_timer', 's_nojam', 's_column', 's_clear', 's_thunder'], boosts: ['guts', 'inv', 'regen', 'energy'] },
+  boss: { name: 'ボス', label: 'ボスのごほうび', desc: 'カードと強化のアップグレード', cards: [], boosts: [], up: true }
+};
+// マスのステージから、ごほうびのエリアを決める（ボスは特別）
+function rewardAreaOf(nd) {
+  if (!nd) return null; if (nd.type === 'boss') return 'boss';
+  try { const st = makeNodePage(nd); const k = st.ice ? 'icecave' : st.bg; return REWARD_AREA[k] ? k : null; } catch (_e) { return null; }
+}
 /* 戦闘後のごほうび：ランナーとサポーターが、それぞれ自分の3つから1つずつえらぶ
    side：'r' = ランナーがえらぶ ／ 's' = サポーターがえらぶ */
-function rollRewardsDuo(run) {
+function rollRewardsDuo(run, area) {
   const shuffle = a => { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
   const cards = shuffle(SUPPORT_DECK.filter(id => !run.deck.includes(id)).map(id => ({ type: 'card', id })));
   const boosts = shuffle(Object.keys(BOOSTS).filter(k => (run.boosts[k] || 0) < BOOSTS[k].max && (!BOOSTS[k].needs || BOOSTS[k].needs.some(c => run.deck.includes(c)))).map(k => ({ type: 'boost', id: k })));
@@ -222,9 +241,15 @@ function rollRewardsDuo(run) {
     while (out.length < n && pools.some(q => q.length) && guard++ < 40) { const q = pools[k++ % pools.length]; if (q.length) out.push(q.shift()); }
     return out;
   };
-  const runner = take([runNew, rups], 3);
+  const A = REWARD_AREA[area] || null, likes = r => !!A && (A.up ? r.type === 'up' || r.type === 'rup' : r.type === 'card' || r.type === 'up' ? A.cards.includes(r.id) : A.boosts.includes(r.id));
+  const pull = (pools, n) => { // このエリアで出やすいものを先に（各列2つまで）。のこりはいつもどおり
+    const out = [];
+    for (const q of pools) for (let i = 0; i < q.length && out.length < n; i++) if (likes(q[i])) { out.push(Object.assign(q.splice(i, 1)[0], { area })); i--; }
+    return shuffle(out).slice(0, n);
+  };
+  const runner = pull([runNew, rups], 2); runner.push(...take([runNew, rups], 3 - runner.length));
   if (runner.length < 3) runner.push({ type: 'heal', pct: 0.25 }); // ランナーの強化がもうないときは、回復
-  const support = take([cards, ups, sups], 3);
+  const support = pull([cards, ups, sups], 2); support.push(...take([cards, ups, sups], 3 - support.length));
   return shuffle(runner).map(r => Object.assign(r, { side: 'r' })).concat(shuffle(support).map(r => Object.assign(r, { side: 's' })));
 }
 function applyReward(run, r) {
