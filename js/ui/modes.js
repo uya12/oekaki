@@ -114,7 +114,7 @@ function mapHtml(run) {
     return `<button class="${cls}" data-id="${n.id}" style="left:${(n.f + 0.5) / STORY.length * 100}%;top:${(n.y + 0.5) / MAP_ROWS * 100}%" title="${n.f + 1}階：${t.name}">${t.mark}</button>`;
   }).join('');
   const labels = STORY.map((_, f) => `<span class="mfl${f === run.stage ? ' now' : ''}" style="left:${(f + 0.5) / STORY.length * 100}%">${f + 1}</span>`).join('');
-  return `<div class="run-map"><div class="rm-in"><svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">${lines}</svg>${nodes}${labels}</div>
+  return `<div class="run-map"><div class="rm-scroll"><div class="rm-in"><svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">${lines}</svg>${nodes}${labels}</div></div>
     <div class="rm-legend">${Object.keys(NODE_T).map(k => `<span><i class="mnode ${k}">${NODE_T[k].mark}</i>${NODE_T[k].name}</span>`).join('')}</div></div>`;
 }
 // マスの説明（ステージのマスは、関門・時間・ヒントも）
@@ -125,6 +125,20 @@ function nodeInfoHtml(nd) {
   const meta = Object.entries(counts).map(([k, n]) => `${KIND_JP[k]}×${n}`).join('・') + (st.cave ? '・低い天井' : '') + (st.erase ? '・地面けし' : '') + (st.boss ? '・ボス戦' : '');
   return `<div class="si-text">${nd.type === 'elite' ? `<p class="si-elite">${t.desc}</p>` : ''}${st.story.map(x => `<p>${x}</p>`).join('')}</div>
     <p class="si-meta">関門：${meta}　制限時間：${st.time}秒　大王の強さ：${CPU_LV[COOP_LV].name}${nd.type === 'elite' ? '（強敵）' : ''}　ベスト：${(sv => (sv.ranks[nodeRecKey(nd)] ? 'ランク' + sv.ranks[nodeRecKey(nd)] : 'まだ記録なし'))(storySave[COOP_LV])}</p>${themeOf(st) ? `<p class="si-theme">ステージの特徴「${THEME[themeOf(st)].name}」：${THEME[themeOf(st)].desc}</p>` : ''}<p class="si-hint">ヒント：${st.hint}</p>`;
+}
+/* マップは大きく描いて、横にスクロールして見る（ホイール・ドラッグでも動かせる） */
+let mapScroll = { stage: -1, x: 0 };
+let mapDrag = null;
+window.addEventListener('pointermove', e => { const d = mapDrag; if (!d) return; const dx = e.clientX - d.x; if (Math.abs(dx) > 4) d.moved = true; if (d.moved) { d.sc.scrollLeft = d.s - dx; d.sc.classList.add('grab'); } });
+window.addEventListener('pointerup', () => { const d = mapDrag; mapDrag = null; if (!d) return; d.sc.classList.remove('grab'); if (d.moved) d.sc.addEventListener('click', ev => { ev.stopPropagation(); ev.preventDefault(); }, { capture: true, once: true }); }); // ドラッグのあとのクリックで、マスをえらばない
+function mapScrollSetup(sc, run) {
+  if (!sc) return;
+  const fw = sc.querySelector('.rm-in').offsetWidth / STORY.length;
+  if (mapScroll.stage !== run.stage) { mapScroll.stage = run.stage; mapScroll.x = Math.max(0, (run.stage - 1.3) * fw); } // 新しい階：いまの階が見えるところへ
+  sc.scrollLeft = mapScroll.x;
+  sc.addEventListener('scroll', () => { mapScroll.x = sc.scrollLeft; }, { passive: true });
+  sc.addEventListener('wheel', e => { if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) { sc.scrollLeft += e.deltaY; e.preventDefault(); } }, { passive: false });
+  sc.addEventListener('pointerdown', e => { if (e.pointerType !== 'mouse' || e.button !== 0) return; mapDrag = { sc, x: e.clientX, s: sc.scrollLeft, moved: false }; }); // マウスでつかんで動かす
 }
 function showStory() {
   const sv = storySave[COOP_LV], run = ensureRunMap(sv.run);
@@ -137,6 +151,7 @@ function showStory() {
     if (!cur || (cur.f < run.stage && !reach.includes(cur.id))) mapSel = reach.length ? reach[0] : null;
     grid.insertAdjacentHTML('beforeend', mapHtml(run));
     grid.querySelectorAll('.run-map .rm-in .mnode').forEach(b => b.addEventListener('click', () => { mapSel = +b.dataset.id; storySel = 0; showStory(); }));
+    mapScrollSetup(grid.querySelector('.rm-scroll'), run);
   }
   {
     const ok = exUnlocked(), eb = document.createElement('button');
