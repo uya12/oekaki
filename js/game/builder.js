@@ -182,8 +182,7 @@ function drawGuides() {
   if (!COOP || !guides.length) return;
   const sel = SUPPORT_BLOCKS[tool] ? tool : null;
   g.save(); g.lineWidth = 2;
-  let labeled = false;
-  for (const gd of guides) {
+  for (const gd of guides) { // 置く場所の点線だけ（「橋をかけよう！」などの文字は出さない）
     if ((gd.until && tick > gd.until) || gd.c1 * T < P.x - 40 || gd.c1 * T < viewX - 40 || gd.c0 * T > viewX + VWW + 40) continue;
     const cells = []; for (let c = gd.c0; c <= gd.c1; c++) { const t = tiles[idx(c, gd.row)]; if (t === 0 || t === 6) cells.push(c); }
     if (!cells.length) continue;
@@ -191,10 +190,6 @@ function drawGuides() {
     g.setLineDash([4, 4]); g.strokeStyle = active ? 'rgba(42,157,92,0.85)' : 'rgba(42,157,92,0.3)';
     for (const c of cells) g.strokeRect(c * T + 2, gd.row * T + 2, T - 4, T - 4);
     g.setLineDash([]);
-    if (!labeled && gd.c0 * T > P.x) {
-      labeled = true;
-      ghostLabel(gd.kind === 'pad' ? 'ここにジャンプ台！' : '橋をかけよう！', (gd.c0 + gd.c1 + 1) / 2 * T, gd.row * T - 8, true);
-    }
   }
   g.restore();
 }
