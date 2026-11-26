@@ -126,12 +126,17 @@ function mapHtml(run) {
 }
 // マスの説明（ステージのマスは、関門・時間・ヒントも）
 function nodeInfoHtml(nd) {
-  const t = NODE_T[nd.type];
-  if (nd.type !== 'stage' && nd.type !== 'elite' && nd.type !== 'boss') return `<div class="si-text"><p>${t.desc}</p></div>`;
-  const st = makeNodePage(nd), counts = {}; st.kinds.forEach(k => { counts[k] = (counts[k] || 0) + 1; });
-  const meta = Object.entries(counts).map(([k, n]) => `${KIND_JP[k]}×${n}`).join('・') + (st.cave ? '・低い天井' : '') + (st.erase ? '・地面けし' : '') + (st.boss ? '・ボス戦' : '');
-  return `<div class="si-text">${nd.type === 'elite' ? `<p class="si-elite">${t.desc}</p>` : ''}${st.story.map(x => `<p>${x}</p>`).join('')}</div>
-    <p class="si-meta">関門：${meta}　制限時間：${st.time}秒　大王の強さ：${CPU_LV[COOP_LV].name}${nd.type === 'elite' ? '（強敵）' : ''}　ベスト：${(sv => (sv.ranks[nodeRecKey(nd)] ? 'ランク' + sv.ranks[nodeRecKey(nd)] : 'まだ記録なし'))(storySave[COOP_LV])}</p>${(A => A ? `<p class="si-reward">ごほうび：${A.label}（${A.desc}が出やすい）</p>` : '')(REWARD_AREA[rewardAreaOf(nd)])}${themeOf(st) ? `<p class="si-theme">ステージの特徴「${THEME[themeOf(st)].name}」：${THEME[themeOf(st)].desc}</p>` : ''}<p class="si-hint">ヒント：${st.hint}</p>`;
+  const A = REWARD_AREA[rewardAreaOf(nd)];
+  const area = A && !A.up ? `<p class="si-reward">★ ${A.name}の${A.label}：${A.desc}が出やすい</p>` : '';
+  const line = {
+    stage: 'ランナーとサポーターが1つずつえらべる',
+    elite: 'ランナーとサポーターが1つずつえらべる（2回）',
+    boss: 'ランナーとサポーターが1つずつえらべる。アップグレードが出やすい。HPが満タンにもどる',
+    rest: 'HPを最大HPの30%回復するか、カード・ランナーの強化を1つアップグレード',
+    treasure: 'カード・強化の3つから1つえらべる',
+    event: '何が起こるかはお楽しみ（いいことも、わるいことも）'
+  }[nd.type] || '';
+  return `<p class="si-rwline">ごほうび：${line}</p>${area}`;
 }
 /* マップは大きく描いて、たてにスクロールして見る（ホイール・ドラッグでも動かせる） */
 let mapScroll = { stage: -1, x: 0 };
@@ -173,15 +178,13 @@ function showStory() {
   if (storySel === EX_IDX) {
     const st = EX_PAGE, locked = !exUnlocked();
     intro.innerHTML = `<div class="si-head"><span class="si-page">EXステージ</span><h3 class="hand">${locked ? '？？？' : st.name}</h3></div>
-      <div class="si-text">${locked ? '<p>15階の冒険を最後までクリアすると解放されます。とても難しいステージです。</p>' : st.story.map(t => `<p>${t}</p>`).join('')}</div>
-      ${locked ? '' : `<p class="si-meta">制限時間：${st.time}秒　大王の強さ：${CPU_LV[COOP_LV].name}　サポーターは基本の8枚のカードを使います（冒険のごほうびは使いません）</p><p class="si-hint">ヒント：${st.hint}</p>`}
+      <p class="si-rwline">${locked ? '15階の冒険を最後までクリアすると解放' : 'ごほうび：なし（クリアするとランクとメダルが記録される）'}</p>
       <div class="si-btns"><button class="btn blue big" id="btnStoryGo"${locked ? ' disabled' : ''}>${locked ? 'ロック中' : 'EXステージに挑戦'}</button><button class="btn" id="btnStoryBack">冒険にもどる</button></div>`;
     $('#btnStoryGo').addEventListener('click', () => { if (exUnlocked()) startStoryPage(EX_IDX); });
     $('#btnStoryBack').addEventListener('click', () => { storySel = 0; showStory(); });
   } else if (!run) {
     intro.innerHTML = `<div class="si-head"><span class="si-page">新しい冒険</span><h3 class="hand">消しゴム大王をとめろ！</h3></div>
-      <div class="si-text"><p>ノートの中の分かれ道を、2人で進む冒険。どの道を通るかは自分たちで決めよう。</p>
-        <p>ふつうのステージ・強敵・休けい・たからばこ・ふしぎなマス…。5階はどの道でもたからばこ。8階と15階には消しゴム大王が待っている。</p></div>
+      <p class="si-rwline">ごほうび：ステージをクリアするたびに、ランナーとサポーターが1つずつカードや強化をえらべる。ステージのエリアによって、出やすいごほうびがちがう</p>
       <div class="si-run"><div><b>サポーターのカード（${START_DECK.length}枚）</b><div class="rw-deck">${deckIconsHtml(START_DECK)}</div></div>
         <div><b>強化</b><div class="rw-boosts"><span class="rw-none">ステージをクリアすると、ごほうびで強くなれます</span></div></div></div>
       <div class="si-btns"><button class="btn blue big" id="btnRunNew">冒険をはじめる（マップを作る）</button></div>`;
@@ -197,7 +200,7 @@ function showStory() {
     intro.innerHTML = `<div class="si-head">${ak ? `<i class="si-area" style="background-image:url(${areaIconURL(ak)})" title="${AREA_NAME[ak]}"></i>` : ''}<span class="si-page">${nd ? `${nd.f + 1}階 / ${STORY.length}　${t.name}${ak ? `・${AREA_NAME[ak]}` : ''}` : ''}</span><h3 class="hand">${name}</h3></div>
       <div class="si-btns">${go}<button class="btn" id="btnRunNew">最初からやり直す</button></div>
       ${nd ? nodeInfoHtml(nd) : ''}
-      <p class="si-note">${run.pending ? 'ごほうびをえらんでから、次のマスへ進もう。' : run.cur != null ? 'さっき負けたマスに、もう一度挑戦しよう（HPは、このマスに入ったときにもどる）。' : '光っているマスが、次に進めるマスです。HPは次のステージに引きつぎます（ボスをたおすと満タン）。'}</p>
+      ${(n => n ? `<p class="si-note">${n}</p>` : '')(run.pending ? 'ごほうびをえらんでから、次のマスへ進もう。' : run.cur != null ? 'さっき負けたマスに、もう一度挑戦しよう（HPは、このマスに入ったときにもどる）。' : '')}
       <div class="si-run"><div><b>サポーターのカード（${run.deck.length}枚）</b><div class="rw-deck">${deckIconsHtml(run.deck, run.ups)}</div></div>
         <div><b>強化</b><div class="rw-boosts">${hpChip(run)}${boostSummary(run)}${curseSummary(run)}</div></div></div>`;
     drawDeckIcons(intro);
@@ -242,8 +245,7 @@ function showReward() {
     : duo ? (kind === 'elite' ? `強敵をたおした！ 2人で1つずつえらぼう（あと${left}回）` : `${run.stage}階 クリア！ 2人で1つずつごほうびをえらぼう`)
     : kind === 'elite' ? `強敵をたおした！ ごほうびをえらぼう（あと${left}枚）` : `${run.stage}階 クリア！ ごほうびを1枚えらぼう`;
   const RA = duo && REWARD_AREA[run.rwArea]; // このステージで出やすいごほうび
-  $('#rewardSub').textContent = (RA ? `${RA.name}の${RA.label}：${RA.desc}が出やすい（★のしるし）。` : '') + (duo ? (online ? `あなたは${duoMySide() === 'r' ? 'P1 ランナー' : 'P2 サポーター'}：自分の列から1つえらぼう。2人ともえらんだら決定です（もう一度押すと取り消し）` : 'P1 ランナーは左、P2 サポーターは右から1つずつ。2人ともえらんだら決定です（もう一度押すと取り消し）')
-    : (evt && kind !== 'event' ? evt.text + '　' : '') + (kind === 'event' ? '' : 'えらんだら、マップで次の道をえらぼう。') + (kind === 'event' ? '' : guest ? '　カードをタップすると、ホストに「これがいい！」と提案できます（決めるのはホスト）' : online ? '　サポーターの提案には「P2のおすすめ」がつきます。えらんでいるカードは相手の画面にも見えます' : ''));
+  $('#rewardSub').textContent = RA ? `★ ${RA.name}の${RA.label}：${RA.desc}が出やすい` : (evt && kind !== 'event' ? evt.text : '');
   const row = $('#rewardRow'); row.innerHTML = ''; row.classList.toggle('watch', guest);
   row.classList.toggle('duo', duo);
   const sideRow = {};
