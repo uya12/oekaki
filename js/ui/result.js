@@ -57,7 +57,7 @@ function showResult() {
   $('#btnRetry').textContent = COOP ? 'もう一度挑戦' : '同じ設定で再戦';
   $('#btnNextPage').hidden = true; $('#btnStoryMap').hidden = !COOP;
   if (COOP) {
-    $('#btnRedeck').hidden = true; $('#btnRedraw').hidden = true;
+    $('#btnRedeck').hidden = true; $('#btnRedraw').hidden = true; $('#btnRetry').hidden = true; // ストーリーでは「もう一度挑戦」は出さない（負けたらマップからもう一度）
     const win = r.winner === 'runner', rem = Math.ceil(timeLeft / 60);
     // ページの長さが違っても公平になるよう、残り時間は「割合」で評価する
     const score = win ? Math.round(rem / pageDef(storyIdx).time * 400) + Math.ceil(P.hp / P.maxHp * 100) : 0;
