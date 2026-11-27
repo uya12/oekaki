@@ -54,7 +54,7 @@ function useHealNow(id = 's_heart') {
   if (left !== Infinity) popup(px, py - 24, `のこり${supUses[id]}回`, C.builder, 14);
   updateToolAvailability();
 }
-// 強すぎるサポートは1ページにつき3回まで
+// 強すぎるサポートは1ステージにつき3回まで
 const SUPPORT_LIMIT = { s_freeze: 3, s_bomb: 3, s_heart: 3, s_timer: 2, s_nojam: 2, s_thunder: 3 };
 let supUses = {};
 const usesLeft = id => COOP && SUPPORT_LIMIT[id] && !dbg('noLimit') ? (supUses[id] ?? SUPPORT_LIMIT[id]) : Infinity;

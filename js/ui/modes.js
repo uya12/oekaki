@@ -55,8 +55,8 @@ function deckGo() {
 function setSetupTexts() {
   if (COOP) {
     $('#drawTitle').innerHTML = '<span class="pill p1">P1</span> ランナーのキャラを描こう';
-    $('#drawSub').textContent = '協力ストーリー：このキャラで全8ページを旅します。P2はサポーターになってランナーを守ります。';
-    $('#btnGo').textContent = 'ページ選択へ';
+    $('#drawSub').textContent = '協力ストーリー：このキャラで15階の冒険に出ます。P2はサポーターになってランナーを守ります。';
+    $('#btnGo').textContent = '冒険のマップへ';
     return;
   }
   if (!MATCH.on) {

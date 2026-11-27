@@ -62,7 +62,7 @@ const EX_PAGE = { name: '真っ白なページ', bg: 'ex', terr: '#e6e1f0', ex: 
   kinds: ['darkpit', 'lift', 'spikes', 'key', 'gate', 'darkpit', 'wall', 'dark', 'lift', 'spikes', 'gate', 'darkpit', 'key', 'spikes', 'darkpit'],
   time: 215, cpu: 2.1, pool: 1, erase: true, boss: true, regen: 0.115, limit: 2, dmg: 1.75, heart: 0.08,
   hint: '暗闇の中の大穴、長いトゲ、とても強い妨害、少ないエネルギー、痛いダメージ。ボム・ストップ・ハートは2回まで',
-  story: ['15階の冒険をクリアすると、ノートの最後に、まっしろなページが現れた。', '真・消しゴム大王「ここは、すべてを消し去るためのページ…生きて帰れると思うな！」', '2人「最後の最後まで、いっしょに描き続けるんだ！」'] };
+  story: ['EXのカギで扉をあけると、ノートの最後に、まっしろなページが現れた。', '真・消しゴム大王「ここは、すべてを消し去るためのページ…生きて帰れると思うな！」', '2人「最後の最後まで、いっしょに描き続けるんだ！」'] };
 const pageDef = i => i === EX_IDX ? EX_PAGE : nodePage && nodePage.f === i ? nodePage.page : STORY[i]; // 冒険ではマップでえらんだマスのステージ
 const pageLabel = i => i === EX_IDX ? 'EXステージ' : `${i + 1}階`;
 const isEX = () => COOP && storyIdx === EX_IDX;
